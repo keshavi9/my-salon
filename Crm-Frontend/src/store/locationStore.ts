@@ -293,6 +293,77 @@ export const BRANCH_INVENTORY: Record<BranchId, InventoryProduct[]> = {
   ],
 }
 
+// ── Queue & Revenue Trend seed data ─────────────────────────────────────────
+
+export interface QueueClient {
+  id: number
+  name: string
+  time: string
+  stylist: string
+  service: string
+  paymentStatus: 'Paid' | 'Pending'
+  queueStatus: 'Waiting' | 'In Chair' | 'Checked Out'
+}
+
+export interface RevenueTrendPoint {
+  day: string
+  services: number
+  retail: number
+}
+
+export const BRANCH_QUEUE: Record<BranchId, QueueClient[]> = {
+  main: [
+    { id: 1, name: 'Priya Sharma',  time: '10:00', stylist: 'Neha',  service: 'Hair Cut & Color', paymentStatus: 'Paid',    queueStatus: 'Checked Out' },
+    { id: 2, name: 'Riya Patel',    time: '11:30', stylist: 'Pooja', service: 'Facial',           paymentStatus: 'Pending', queueStatus: 'In Chair'    },
+    { id: 3, name: 'Anita Verma',   time: '13:00', stylist: 'Sonal', service: 'Manicure',         paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+    { id: 4, name: 'Meena Joshi',   time: '14:30', stylist: 'Neha',  service: 'Hair Spa',         paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+    { id: 5, name: 'Sunita Rao',    time: '16:00', stylist: 'Pooja', service: 'Waxing',           paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+  ],
+  satellite: [
+    { id: 1, name: 'Kavita Singh',  time: '10:30', stylist: 'Rahul', service: 'Hair Coloring',    paymentStatus: 'Paid',    queueStatus: 'Checked Out' },
+    { id: 2, name: 'Deepa Mehta',   time: '12:00', stylist: 'Neha',  service: 'Facial',           paymentStatus: 'Pending', queueStatus: 'In Chair'    },
+    { id: 3, name: 'Pooja Desai',   time: '13:30', stylist: 'Neha',  service: 'Manicure',         paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+    { id: 4, name: 'Sanya Shah',    time: '15:00', stylist: 'Rahul', service: 'Waxing (Full)',    paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+  ],
+  sghighway: [
+    { id: 1, name: 'Nisha Kapoor',  time: '09:30', stylist: 'Sima',  service: 'Bridal Makeup',    paymentStatus: 'Paid',    queueStatus: 'Checked Out' },
+    { id: 2, name: 'Rekha Trivedi', time: '11:00', stylist: 'Amit',  service: 'Hair Spa',         paymentStatus: 'Pending', queueStatus: 'In Chair'    },
+    { id: 3, name: 'Alka Bhat',     time: '13:00', stylist: 'Sima',  service: 'Pedicure',         paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+    { id: 4, name: 'Jyoti Pillai',  time: '14:30', stylist: 'Amit',  service: 'Facial',           paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+    { id: 5, name: 'Mira Desai',    time: '16:00', stylist: 'Rohan', service: 'Hair Coloring',    paymentStatus: 'Pending', queueStatus: 'Waiting'     },
+  ],
+}
+
+export const BRANCH_REVENUE_TREND: Record<BranchId, RevenueTrendPoint[]> = {
+  main: [
+    { day: 'Mon', services: 11200, retail: 4000 },
+    { day: 'Tue', services: 13800, retail: 5100 },
+    { day: 'Wed', services: 12100, retail: 4300 },
+    { day: 'Thu', services: 15900, retail: 5400 },
+    { day: 'Fri', services: 18200, retail: 5900 },
+    { day: 'Sat', services: 14600, retail: 5100 },
+    { day: 'Today', services: 13700, retail: 4750 },
+  ],
+  satellite: [
+    { day: 'Mon', services: 6800, retail: 2100 },
+    { day: 'Tue', services: 8400, retail: 2800 },
+    { day: 'Wed', services: 7200, retail: 2600 },
+    { day: 'Thu', services: 9800, retail: 3300 },
+    { day: 'Fri', services: 11600, retail: 3800 },
+    { day: 'Sat', services: 9400, retail: 3300 },
+    { day: 'Today', services: 8300, retail: 2900 },
+  ],
+  sghighway: [
+    { day: 'Mon', services: 13800, retail: 4600 },
+    { day: 'Tue', services: 16600, retail: 5500 },
+    { day: 'Wed', services: 14900, retail: 4900 },
+    { day: 'Thu', services: 19200, retail: 6400 },
+    { day: 'Fri', services: 20900, retail: 6900 },
+    { day: 'Sat', services: 18200, retail: 6100 },
+    { day: 'Today', services: 17100, retail: 5700 },
+  ],
+}
+
 // ── Zustand store ─────────────────────────────────────────────────────────────
 interface LocationState {
   branchId: BranchId

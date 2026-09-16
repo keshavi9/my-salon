@@ -1,24 +1,31 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize')
+const { sequelize } = require('../config/db')
 
-const supportTicketSchema = new mongoose.Schema({
-  ticketId: { type: String, required: true, unique: true },
-  subject: { type: String, required: true },
-  category: { type: String, required: true, enum: ['billing', 'technical', 'feature', 'bug', 'question'] },
-  priority: { type: String, required: true, enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
-  status: { type: String, enum: ['open', 'in-progress', 'resolved', 'closed'], default: 'open' },
-  description: { type: String, required: true },
-  adminEmail: { type: String, required: true },
-  attachments: [{ fileName: String, fileUrl: String, uploadedAt: Date }],
-  messages: [{
-    sender: { type: String, required: true },
-    message: { type: String, required: true },
-    isAdmin: { type: Boolean, default: true },
-    createdAt: { type: Date, default: Date.now }
-  }],
-  assignedTo: { type: String },
-  resolvedAt: Date,
-  emailSent: { type: Boolean, default: false },
-  emailSentAt: Date
-}, { timestamps: true });
+const SupportTicket = sequelize.define('SupportTicket', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  ticketId: { type: DataTypes.STRING, allowNull: false, unique: true },
+  subject: { type: DataTypes.STRING, allowNull: false },
+  category: {
+    type: DataTypes.ENUM('billing', 'technical', 'feature', 'bug', 'question'),
+    allowNull: false,
+  },
+  priority: {
+    type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
+    defaultValue: 'medium',
+  },
+  status: {
+    type: DataTypes.ENUM('open', 'in-progress', 'resolved', 'closed'),
+    defaultValue: 'open',
+  },
+  description: { type: DataTypes.TEXT, allowNull: false },
+  adminEmail: { type: DataTypes.STRING, allowNull: false },
+  // stored as JSON arrays
+  attachments: { type: DataTypes.JSONB, defaultValue: [] },
+  messages: { type: DataTypes.JSONB, defaultValue: [] },
+  assignedTo: { type: DataTypes.STRING },
+  resolvedAt: { type: DataTypes.DATE },
+  emailSent: { type: DataTypes.BOOLEAN, defaultValue: false },
+  emailSentAt: { type: DataTypes.DATE },
+}, { tableName: 'support_tickets' })
 
-module.exports = mongoose.model('SupportTicket', supportTicketSchema);
+module.exports = SupportTicket

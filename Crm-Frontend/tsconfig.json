@@ -38,7 +38,6 @@
   "exclude": [
     "node_modules",
     "Mobile-App",
-    "Instgram-bookings",
     "Backend-all-in-one",
     "Crm-Frontend"
   ]

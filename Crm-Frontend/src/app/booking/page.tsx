@@ -1,29 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { UserPlus, CalendarDays, CalendarCheck } from 'lucide-react'
-import dynamic from 'next/dynamic'
-
-const WalkinBooking = dynamic(() => import('./walkin/page'), { ssr: false })
-const ScheduleBooking = dynamic(() => import('./schedule/page'), { ssr: false })
-const CalendarView = dynamic(() => import('./calendar/page'), { ssr: false })
+import { UserPlus, CalendarDays } from 'lucide-react'
+import WalkinBooking from './walkin/page'
+import CalendarView from './calendar/page'
 
 const TABS = [
   {
     key: 'walkin',
-    label: 'Walk-In',
+    label: 'Billing',
     sub: 'Instant booking at counter',
     icon: UserPlus,
-    color: '#9D679F',
+    color: '#9B6BB3',
     bg: 'from-salon-400 to-salon-900',
-  },
-  {
-    key: 'schedule',
-    label: 'Schedule',
-    sub: 'Book future appointments',
-    icon: CalendarCheck,
-    color: '#6F5AA3',
-    bg: 'from-salon-400 to-salon-600',
   },
   {
     key: 'calendar',
@@ -43,11 +32,11 @@ export default function BookingPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <CalendarDays size={18} className="text-salon-600 dark:text-salon-100" />
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Booking</h1>
+        <CalendarDays size={17} className="text-accent dark:text-salon-400" />
+        <h1 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>Booking</h1>
       </div>
 
-      <div className="grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid max-w-2xl grid-cols-1 gap-2.5 sm:grid-cols-2">
         {TABS.map((item) => {
           const active = tab === item.key
           const Icon = item.icon
@@ -56,37 +45,36 @@ export default function BookingPage() {
             <button
               key={item.key}
               onClick={() => setTab(item.key)}
-              className={`relative flex flex-col items-start gap-1.5 overflow-hidden rounded-2xl p-4 text-left transition-all duration-200 ${
+              className={`relative flex flex-col items-start gap-2 overflow-hidden rounded-xl p-4 text-left transition-all duration-200 ${
                 active
                   ? ''
-                  : 'border-2 border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800'
+                  : 'border border-border bg-background-secondary hover:bg-hover dark:bg-background-secondary dark:hover:bg-hover'
               }`}
               style={{
-                border: active ? `2px solid ${item.color}` : undefined,
-                background: active ? `${item.color}10` : undefined,
-                boxShadow: active ? `0 0 0 4px ${item.color}15` : 'none',
+                border: active ? `1.5px solid ${item.color}` : undefined,
+                background: active ? `${item.color}0E` : undefined,
+                boxShadow: active ? `0 0 0 3px ${item.color}18` : undefined,
               }}
             >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm ${item.bg}`}>
-                <Icon size={16} />
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br text-white ${item.bg}`}>
+                <Icon size={15} />
               </div>
               <div>
-                <div className={`text-sm font-bold ${active ? '' : 'text-gray-900 dark:text-white'}`} style={{ color: active ? item.color : undefined }}>
+                <div className="text-sm font-semibold" style={{ color: active ? item.color : 'var(--text-primary)' }}>
                   {item.label}
                 </div>
-                <div className="text-[11px] text-gray-500 dark:text-gray-400">{item.sub}</div>
+                <div className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{item.sub}</div>
               </div>
-              {active && <span className="absolute right-3 top-3 h-2 w-2 rounded-full" style={{ background: item.color }} />}
+              {active && <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full" style={{ background: item.color }} />}
             </button>
           )
         })}
       </div>
 
-      <div className="border-t border-gray-200 dark:border-gray-700" />
+      <div className="border-t border-border" />
 
-      {tab === 'walkin' && <WalkinBooking />}
-      {tab === 'schedule' && <ScheduleBooking />}
-      {tab === 'calendar' && <CalendarView />}
+      <div className={tab === 'walkin' ? '' : 'hidden'}><WalkinBooking /></div>
+      <div className={tab === 'calendar' ? '' : 'hidden'}><CalendarView /></div>
     </div>
   )
 }

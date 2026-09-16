@@ -9,11 +9,11 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
 const GRADIENTS = [
-  { name: 'Sunset Orchid', class: 'from-[#9D679F] to-[#6F5AA3]' },
+  { name: 'Sunset Orchid', class: 'from-accent to-accent-dark' },
   { name: 'Sage Garden', class: 'from-[#6F9F8F] to-[#5a8274]' },
   { name: 'Ocean Mist', class: 'from-[#6D91BF] to-[#4f719c]' },
   { name: 'Autumn Gold', class: 'from-[#C7923E] to-[#a3752c]' },
-  { name: 'Warm Velvet', class: 'from-[#C96F9B] to-[#9c4d72]' },
+  { name: 'Warm Velvet', class: 'from-[var(--accent-light)] to-[#9c4d72]' },
 ]
 
 export default function ProfileSettingsPage() {
@@ -139,15 +139,15 @@ export default function ProfileSettingsPage() {
     if (avatar && avatar.startsWith('from-')) {
       return avatar
     }
-    return 'from-[#9D679F] to-[#6F5AA3]' // default Sunset Orchid
+    return 'from-accent to-accent-dark' // default Sunset Orchid
   }
 
   return (
     <div className="space-y-6">
       {/* Alert Banner */}
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-400 animate-fadeIn shadow-sm">
-          <Check size={18} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-success-bg dark:bg-emerald-950/30 border border-success-border dark:border-emerald-900 text-emerald-800 dark:text-success-text animate-fadeIn shadow-sm">
+          <Check size={18} className="shrink-0 text-success-text dark:text-success-text" />
           <p className="text-sm font-semibold">{success}</p>
         </div>
       )}
@@ -170,7 +170,7 @@ export default function ProfileSettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowAvatarModal(true)}
-                className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-salon-600 hover:bg-salon-900 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-gray-800 transition-colors"
+                className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-accent hover:bg-salon-900 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-border transition-colors"
                 aria-label="Change Profile Photo"
               >
                 <Camera size={16} />
@@ -181,16 +181,16 @@ export default function ProfileSettingsPage() {
             <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text-secondary)' }}>{email}</p>
             
             <div className="mt-3.5">
-              <span className="px-3.5 py-1 rounded-full text-xs font-bold capitalize bg-salon-50 dark:bg-salon-900/20 text-salon-600 dark:text-salon-200 border border-salon-100/50 dark:border-salon-800/30">
+              <span className="px-3.5 py-1 rounded-full text-xs font-bold capitalize bg-accent-light dark:bg-salon-900/20 text-accent dark:text-salon-200 border border-salon-100/50 dark:border-salon-800/30">
                 {user?.role || 'Staff Member'}
               </span>
             </div>
 
             {/* Read-Only Account Details */}
-            <div className="w-full mt-8 pt-6 border-t border-gray-100 dark:border-gray-700/50 space-y-3.5 text-left text-xs font-semibold">
+            <div className="w-full mt-8 pt-6 border-t border-border dark:border-border/50 space-y-3.5 text-left text-xs font-semibold">
               <div className="flex justify-between items-center">
                 <span style={{ color: 'var(--text-secondary)' }}>Account Status</span>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400 text-[10px] font-extrabold uppercase tracking-wide">
+                <span className="px-2 py-0.5 rounded-md bg-success-bg dark:bg-emerald-950/40 text-emerald-800 dark:text-success-text text-[10px] font-extrabold uppercase tracking-wide">
                   Active
                 </span>
               </div>
@@ -202,7 +202,7 @@ export default function ProfileSettingsPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span style={{ color: 'var(--text-secondary)' }}>Staff ID Reference</span>
-                <code className="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-750 px-1.5 py-0.5 rounded">
+                <code className="text-[10px] font-mono text-text-secondary dark:text-text-secondary bg-hover dark:bg-gray-750 px-1.5 py-0.5 rounded">
                   USR-{user?.id || '1'}
                 </code>
               </div>
@@ -214,7 +214,7 @@ export default function ProfileSettingsPage() {
         <div className="xl:col-span-2">
           <Card>
             <h3 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-              <User size={18} className="text-salon-600" />
+              <User size={18} className="text-accent" />
               Personal Information
             </h3>
 
@@ -259,7 +259,7 @@ export default function ProfileSettingsPage() {
 
                 {/* Date of Birth */}
                 <div className="relative">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-semibold text-text-secondary dark:text-text-secondary mb-2">
                     Date of Birth
                   </label>
                   <div className="relative">
@@ -267,7 +267,7 @@ export default function ProfileSettingsPage() {
                       type="date"
                       value={dateOfBirth}
                       onChange={e => setDateOfBirth(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-salon-400 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent dark:bg-background-secondary dark:border-border dark:text-text-primary border-border dark:border-gray-600"
                     />
                   </div>
                 </div>
@@ -275,7 +275,7 @@ export default function ProfileSettingsPage() {
 
               {/* Gender Radio Card Grid */}
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <label className="block text-sm font-semibold text-text-secondary dark:text-text-secondary">
                   Gender Identification
                 </label>
                 <div className="grid grid-cols-3 gap-3">
@@ -302,7 +302,7 @@ export default function ProfileSettingsPage() {
 
               {/* Home Address */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-text-secondary dark:text-text-secondary mb-2">
                   Permanent Address
                 </label>
                 <textarea
@@ -310,12 +310,12 @@ export default function ProfileSettingsPage() {
                   onChange={e => setAddress(e.target.value)}
                   placeholder="Enter your current residential address..."
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-salon-400 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
+                  className="w-full px-4 py-3 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent dark:bg-background-secondary dark:border-border dark:text-text-primary border-border dark:border-gray-600"
                 />
               </div>
 
               {/* Actions Footer */}
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3.5">
+              <div className="pt-4 border-t border-border dark:border-border flex justify-end gap-3.5">
                 <Button
                   type="button"
                   variant="secondary"
@@ -341,15 +341,15 @@ export default function ProfileSettingsPage() {
 
       {/* Avatar Presets / Custom Upload Selection Modal */}
       {showAvatarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-700">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-secondary/60 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-md bg-background-secondary dark:bg-background-secondary rounded-2xl overflow-hidden shadow-2xl border border-border dark:border-border">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-border">
               <h4 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Customize Profile Photo</h4>
               <button 
                 type="button" 
                 onClick={() => setShowAvatarModal(false)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-hover dark:hover:bg-gray-700 transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
               >
                 <X size={18} />
@@ -371,7 +371,7 @@ export default function ProfileSettingsPage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3.5 border-2 border-dashed rounded-xl flex items-center justify-center gap-2 hover:bg-salon-50 dark:hover:bg-salon-900/10 text-sm font-bold transition-all"
+                  className="w-full py-3.5 border-2 border-dashed rounded-xl flex items-center justify-center gap-2 hover:bg-accent-light dark:hover:bg-salon-900/10 text-sm font-bold transition-all"
                   style={{ borderColor: 'var(--border)', color: 'var(--accent)' }}
                 >
                   <Camera size={16} />
@@ -397,7 +397,7 @@ export default function ProfileSettingsPage() {
                         className={`w-12 h-12 rounded-full bg-gradient-to-br ${fullClass} hover:scale-105 transition-all relative flex items-center justify-center border-2 border-transparent`}
                       >
                         {isSelected && (
-                          <div className="absolute inset-0 bg-black/20 rounded-full flex items-center justify-center">
+                          <div className="absolute inset-0 bg-background-secondary/20 rounded-full flex items-center justify-center">
                             <Check size={18} className="text-white" />
                           </div>
                         )}
@@ -409,12 +409,12 @@ export default function ProfileSettingsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-2">
+            <div className="px-5 py-3 border-t border-border dark:border-border bg-background dark:bg-background-secondary/50 flex justify-end gap-2">
               {avatar && (
                 <button
                   type="button"
                   onClick={() => { setAvatar(''); setShowAvatarModal(false) }}
-                  className="px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-bold text-danger hover:bg-danger-bg dark:hover:bg-red-950/20 rounded-xl transition-colors"
                 >
                   Remove Photo
                 </button>

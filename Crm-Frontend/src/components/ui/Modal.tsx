@@ -42,8 +42,6 @@ export default function Modal({
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
-
   const sizes = {
     sm: 'max-w-md',
     md: 'max-w-lg',
@@ -51,33 +49,35 @@ export default function Modal({
     xl: 'max-w-4xl',
   }
 
+  if (!isOpen) return null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-background-secondary/50 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
         className={cn(
-          'relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full',
+          'relative bg-background-secondary dark:bg-background-secondary rounded-2xl shadow-2xl w-full',
           'max-h-[90vh] overflow-y-auto',
           sizes[size]
         )}
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-6 border-b border-border dark:border-border">
             {title && (
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-bold text-text-primary dark:text-text-primary">
                 {title}
               </h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg hover:bg-hover dark:hover:bg-background-secondary flex items-center justify-center transition-colors"
                 aria-label="Close modal"
               >
-                <X size={20} className="text-gray-500" />
+                <X size={20} className="text-text-secondary" />
               </button>
             )}
           </div>

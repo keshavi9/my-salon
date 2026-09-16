@@ -8,22 +8,28 @@ export const formatCurrency = (amount: number): string => {
 }
 
 // Date formatting
-export const formatDate = (date: string | Date): string => {
+export const formatDate = (date: string | Date | undefined | null): string => {
+  if (!date) return '—'
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(date))
+  }).format(d)
 }
 
-export const formatDateTime = (date: string | Date): string => {
+export const formatDateTime = (date: string | Date | undefined | null): string => {
+  if (!date) return '—'
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return '—'
   return new Intl.DateTimeFormat('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date))
+  }).format(d)
 }
 
 export const formatTime = (time: string): string => {
@@ -107,20 +113,20 @@ export const getDaysDifference = (date1: string | Date, date2: string | Date): n
 // Status badge colors
 export const getStatusColor = (status: string): string => {
   const colors: Record<string, string> = {
-    completed: 'bg-emerald-100 text-emerald-700',
-    confirmed: 'bg-blue-100 text-blue-700',
-    pending: 'bg-amber-100 text-amber-700',
-    cancelled: 'bg-red-100 text-red-700',
-    'in-progress': 'bg-salon-100/40 text-salon-600',
-    'no-show': 'bg-gray-100 text-gray-700',
-    paid: 'bg-emerald-100 text-emerald-700',
-    unpaid: 'bg-red-100 text-red-700',
-    partial: 'bg-amber-100 text-amber-700',
-    active: 'bg-emerald-100 text-emerald-700',
-    inactive: 'bg-gray-100 text-gray-700',
-    expired: 'bg-red-100 text-red-700',
+    completed: 'bg-success-bg text-success-text',
+    confirmed: 'bg-info-bg text-info-text',
+    pending: 'bg-warning-bg text-warning-text',
+    cancelled: 'bg-danger-bg text-danger-text',
+    'in-progress': 'bg-accent-light/40 text-accent',
+    'no-show': 'bg-hover text-text-secondary',
+    paid: 'bg-success-bg text-success-text',
+    unpaid: 'bg-danger-bg text-danger-text',
+    partial: 'bg-warning-bg text-warning-text',
+    active: 'bg-success-bg text-success-text',
+    inactive: 'bg-hover text-text-secondary',
+    expired: 'bg-danger-bg text-danger-text',
   }
-  return colors[status.toLowerCase()] || 'bg-gray-100 text-gray-700'
+  return colors[status.toLowerCase()] || 'bg-hover text-text-secondary'
 }
 
 // Sanitize input (XSS protection)

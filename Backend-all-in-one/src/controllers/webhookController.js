@@ -3,7 +3,10 @@ const Booking = require('../models/Booking')
 
 exports.handleRazorpayWebhook = async (req, res) => {
   try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || 'rzp_test_webhooksecretkey'
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      return res.status(500).json({ message: 'Webhook secret not configured' })
+    }
     const signature = req.headers['x-razorpay-signature']
 
     if (!signature) {
@@ -28,13 +31,13 @@ exports.handleRazorpayWebhook = async (req, res) => {
 
       if (orderId) {
         // Find booking by Razorpay Order ID
-        const booking = await Booking.findOne({ razorpayOrderId: orderId })
-        if (booking && booking.status === 'Draft') {
-          booking.status = 'Confirmed'
+        const booking = await Booking.findOne({ where: { razorpayOrderId: orderId } })
+        if (booking && booking.status === 'pending') {
+          booking.status = 'confirmed'
           booking.paymentStatus = 'paid'
           booking.expiresAt = null // clear draft TTL expiry
           await booking.save()
-          console.log(`Webhook: Booking ${booking._id} confirmed via payment.captured`)
+          console.log(`Webhook: Booking ${booking.id} confirmed via payment.captured`)
         }
       }
     } else if (event === 'payment.failed') {
@@ -42,12 +45,12 @@ exports.handleRazorpayWebhook = async (req, res) => {
       const orderId = payment.order_id
 
       if (orderId) {
-        const booking = await Booking.findOne({ razorpayOrderId: orderId })
-        if (booking && booking.status === 'Draft') {
-          booking.status = 'Cancelled'
-          booking.paymentStatus = 'pending'
+        const booking = await Booking.findOne({ where: { razorpayOrderId: orderId } })
+        if (booking && booking.status === 'pending') {
+          booking.status = 'cancelled'
+          booking.paymentStatus = 'unpaid'
           await booking.save()
-          console.log(`Webhook: Booking ${booking._id} cancelled via payment.failed`)
+          console.log(`Webhook: Booking ${booking.id} cancelled via payment.failed`)
         }
       }
     }

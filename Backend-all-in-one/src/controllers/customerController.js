@@ -1,48 +1,72 @@
+const { Op } = require('sequelize')
 const Customer = require('../models/Customer')
+const asyncHandler = require('express-async-handler')
+const { z } = require('zod')
 
-exports.getAll = async (req, res) => {
-  try {
-    const customers = await Customer.find().sort({ createdAt: -1 })
-    res.json(customers)
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-}
+const customerSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  phone: z.string().min(1, 'Phone is required'),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  notes: z.string().optional(),
+})
 
-exports.getOne = async (req, res) => {
-  try {
-    const customer = await Customer.findById(req.params.id)
-    if (!customer) return res.status(404).json({ message: 'Customer not found' })
-    res.json(customer)
-  } catch (err) {
-    res.status(500).json({ message: err.message })
+exports.getAll = asyncHandler(async (req, res) => {
+  const { search, page, limit } = req.query
+  const where = {}
+  if (search) {
+    where[Op.or] = [
+      { name: { [Op.iLike]: `%${search}%` } },
+      { phone: { [Op.iLike]: `%${search}%` } },
+      { email: { [Op.iLike]: `%${search}%` } },
+    ]
   }
-}
 
-exports.create = async (req, res) => {
-  try {
-    const customer = await Customer.create(req.body)
-    res.status(201).json(customer)
-  } catch (err) {
-    res.status(400).json({ message: err.message })
-  }
-}
+  const pageNum = parseInt(page) || 1
+  const limitNum = parseInt(limit) || 20
+  const offset = (pageNum - 1) * limitNum
 
-exports.update = async (req, res) => {
-  try {
-    const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true })
-    if (!customer) return res.status(404).json({ message: 'Customer not found' })
-    res.json(customer)
-  } catch (err) {
-    res.status(400).json({ message: err.message })
-  }
-}
+  const { count, rows } = await Customer.findAndCountAll({ 
+    where, 
+    limit: limitNum, 
+    offset, 
+    order: [['createdAt', 'DESC']] 
+  })
+  
+  res.json({ success: true, data: rows, total: count, page: pageNum, limit: limitNum })
+})
 
-exports.remove = async (req, res) => {
-  try {
-    await Customer.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Customer deleted' })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
+exports.getOne = asyncHandler(async (req, res) => {
+  const customer = await Customer.findByPk(req.params.id)
+  if (!customer) {
+    res.status(404)
+    throw new Error('Customer not found')
   }
-}
+  res.json({ success: true, data: customer })
+})
+
+exports.create = asyncHandler(async (req, res) => {
+  const validated = customerSchema.parse(req.body)
+  const customer = await Customer.create(validated)
+  res.status(201).json({ success: true, message: 'Customer created', data: customer })
+})
+
+exports.update = asyncHandler(async (req, res) => {
+  const customer = await Customer.findByPk(req.params.id)
+  if (!customer) {
+    res.status(404)
+    throw new Error('Customer not found')
+  }
+  const validated = customerSchema.partial().parse(req.body)
+  await customer.update(validated)
+  res.json({ success: true, message: 'Customer updated', data: customer })
+})
+
+exports.remove = asyncHandler(async (req, res) => {
+  const customer = await Customer.findByPk(req.params.id)
+  if (!customer) {
+    res.status(404)
+    throw new Error('Customer not found')
+  }
+  await customer.destroy()
+  res.json({ success: true, message: 'Customer deleted' })
+})

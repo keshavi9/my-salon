@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, DollarSign, CreditCard, Smartphone, Wallet } from 'lucide-react'
+import { Trash2, DollarSign, CreditCard, Smartphone, Wallet, Clock, AlertCircle, CheckCircle2 } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -19,6 +19,7 @@ export default function POSPage() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi' | 'wallet'>('cash')
   const [discount, setDiscount] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState('All')
 
   useEffect(() => {
     fetchData()
@@ -30,7 +31,10 @@ export default function POSPage() {
         api.get('/services?isActive=true'),
         api.get('/staff?isActive=true'),
       ])
-      setServices(servicesRes.data.data || servicesRes.data || [])
+      // Prices are stored in paise — convert to rupees for display
+      const rawServices: Service[] = servicesRes.data.data || servicesRes.data || []
+      const normalised = rawServices.map(s => ({ ...s, price: s.price >= 100 ? s.price / 100 : s.price }))
+      setServices(normalised)
       setStaff(staffRes.data.data || staffRes.data || [])
     } catch (error) {
       console.error('Failed to fetch data:', error)
@@ -63,18 +67,42 @@ export default function POSPage() {
   const discountAmount = (subtotal * discount) / 100
   const total = subtotal - discountAmount
 
-  const handleCheckout = async () => {
-    if (!customerName || !customerPhone || !selectedStaff || selectedServices.length === 0) {
-      alert('Please fill all required fields')
+  // Unique categories for filter tabs
+  const categories = ['All', ...Array.from(new Set(services.map(s => s.category)))]
+  const filteredServices = categoryFilter === 'All'
+    ? services
+    : services.filter(s => s.category === categoryFilter)
+
+  const handleCheckout = async (isPayLater = false) => {
+    if (loading) return
+    
+    if (!customerName || !customerPhone || selectedServices.length === 0) {
+      alert('Please fill customer details and select at least one service')
+      return
+    }
+
+    if (!isPayLater && !selectedStaff) {
+      alert('Please assign a staff member to complete billing')
       return
     }
 
     setLoading(true)
     try {
+      // Step 1: resolve or create the customer to get a valid UUID
+      let customerId: string
+      const searchRes = await api.get(`/customers?search=${customerPhone}`)
+      const existingCustomer = searchRes.data.data?.[0]
+      if (existingCustomer) {
+        customerId = existingCustomer.id
+      } else {
+        const createRes = await api.post('/customers', { name: customerName, phone: customerPhone })
+        customerId = createRes.data.data.id
+      }
+
+      // Step 2: create the booking with the resolved customerId
       await api.post('/bookings', {
-        customerName,
-        customerPhone,
-        staffId: selectedStaff,
+        customerId,
+        staffId: selectedStaff || null,
         services: selectedServices.map(s => ({
           serviceId: s.service.id,
           serviceName: s.service.name,
@@ -83,19 +111,20 @@ export default function POSPage() {
           quantity: s.quantity,
         })),
         date: new Date().toISOString().split('T')[0],
-        startTime: new Date().toTimeString().split(' ')[0].substring(0, 5),
+        time: new Date().toTimeString().split(' ')[0].substring(0, 5),
         totalAmount: total,
-        paidAmount: total,
-        paymentStatus: 'paid',
-        paymentMethod,
-        status: 'completed',
+        paidAmount: isPayLater ? 0 : total,
+        paymentStatus: isPayLater ? 'unpaid' : 'paid',
+        paymentMethod: isPayLater ? 'cash' : paymentMethod,
+        paymentModel: 'Post-Paid',
+        status: isPayLater ? 'confirmed' : 'completed',
       })
 
-      alert('Billing completed successfully!')
+      alert(isPayLater ? 'Booking recorded! Collect payment after service.' : 'Billing completed successfully!')
       resetForm()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to complete billing:', error)
-      alert('Failed to complete billing')
+      alert(error?.response?.data?.message || 'Failed to complete billing')
     } finally {
       setLoading(false)
     }
@@ -113,107 +142,112 @@ export default function POSPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">POS Billing</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Quick billing for walk-in customers
-        </p>
+        <h1 className="text-3xl font-bold text-text-primary dark:text-text-primary">POS Billing</h1>
+        <p className="text-text-secondary dark:text-text-secondary mt-1">Quick billing for walk-in customers</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-6">
+
+          {/* Customer Details */}
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Customer Details
-            </h2>
+            <h2 className="text-xl font-bold text-text-primary dark:text-text-primary mb-4">Customer Details</h2>
             <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Customer Name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Enter name"
-                required
-              />
-              <Input
-                label="Phone Number"
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="Enter phone"
-                required
-              />
+              <Input label="Customer Name" value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)} placeholder="Enter name" required />
+              <Input label="Phone Number" type="tel" value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Enter phone" required />
             </div>
           </Card>
 
+          {/* Select Services */}
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Select Services
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {services.map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => addService(service)}
-                  className="p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-left"
-                >
-                  <div className="font-semibold text-gray-900 dark:text-white">{service.name}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">{service.category}</div>
-                  <div className="text-violet-600 dark:text-violet-400 font-semibold mt-2">
-                    {formatCurrency(service.price)}
-                  </div>
+            <h2 className="text-xl font-bold text-text-primary dark:text-text-primary mb-4">Select Services</h2>
+
+            {/* Category filter tabs */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categories.map(cat => (
+                <button key={cat} onClick={() => setCategoryFilter(cat)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={{
+                    background: categoryFilter === cat ? 'var(--accent)' : 'var(--bg-secondary)',
+                    color: categoryFilter === cat ? '#fff' : 'var(--text-secondary)',
+                    border: `1px solid ${categoryFilter === cat ? 'var(--accent)' : 'var(--border)'}`,
+                  }}>
+                  {cat}
                 </button>
               ))}
             </div>
+
+            {filteredServices.length === 0 ? (
+              <div className="text-center py-12 text-text-secondary">
+                <AlertCircle size={32} className="mx-auto mb-3 opacity-40" />
+                <p className="font-semibold">No services found</p>
+                <p className="text-xs mt-1">Add services from the Services section</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {filteredServices.map((service) => {
+                  const inCart = selectedServices.some(s => s.service.id === service.id)
+                  return (
+                    <button key={service.id} onClick={() => addService(service)}
+                      className="p-4 rounded-xl border-2 transition-all text-left"
+                      style={{
+                        borderColor: inCart ? 'var(--accent)' : 'var(--border)',
+                        background: inCart ? 'var(--accent-light)' : 'var(--bg-secondary)',
+                      }}>
+                      <div className="font-semibold text-text-primary text-sm">{service.name}</div>
+                      <div className="text-xs mt-0.5 font-semibold" style={{ color: 'var(--accent)' }}>{service.category}</div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-text-secondary flex items-center gap-1">
+                          <Clock size={11} />{service.duration} min
+                        </span>
+                        <span className="text-sm font-bold" style={{ color: 'var(--accent)' }}>
+                          {formatCurrency(service.price)}
+                        </span>
+                      </div>
+                      {inCart && (
+                        <span className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                          style={{ background: 'var(--accent)' }}>
+                          <CheckCircle2 size={10} /> Added
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </Card>
 
+          {/* Selected Services */}
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Selected Services
-            </h2>
+            <h2 className="text-xl font-bold text-text-primary dark:text-text-primary mb-4">Selected Services</h2>
             {selectedServices.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                No services selected
-              </p>
+              <p className="text-text-secondary text-center py-8">No services selected</p>
             ) : (
               <div className="space-y-3">
                 {selectedServices.map((item) => (
-                  <div
-                    key={item.service.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800"
-                  >
+                  <div key={item.service.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-background dark:bg-background-secondary">
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-900 dark:text-white">
-                        {item.service.name}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatCurrency(item.service.price)} × {item.quantity}
-                      </div>
+                      <div className="font-semibold text-text-primary">{item.service.name}</div>
+                      <div className="text-sm text-text-secondary">{formatCurrency(item.service.price)} × {item.quantity}</div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateQuantity(item.service.id, item.quantity - 1)}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center"
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center font-semibold text-gray-900 dark:text-white">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.service.id, item.quantity + 1)}
-                          className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center"
-                        >
-                          +
-                        </button>
+                        <button onClick={() => updateQuantity(item.service.id, item.quantity - 1)}
+                          className="w-8 h-8 rounded-lg border border-border bg-background-secondary hover:bg-hover flex items-center justify-center">-</button>
+                        <span className="w-8 text-center font-semibold text-text-primary">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.service.id, item.quantity + 1)}
+                          className="w-8 h-8 rounded-lg border border-border bg-background-secondary hover:bg-hover flex items-center justify-center">+</button>
                       </div>
-                      <div className="font-semibold text-gray-900 dark:text-white w-24 text-right">
+                      <div className="font-semibold text-text-primary w-24 text-right">
                         {formatCurrency(item.service.price * item.quantity)}
                       </div>
-                      <button
-                        onClick={() => removeService(item.service.id)}
-                        className="w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center"
-                      >
-                        <Trash2 size={16} className="text-red-600 dark:text-red-400" />
+                      <button onClick={() => removeService(item.service.id)}
+                        className="w-8 h-8 rounded-lg hover:bg-danger-bg flex items-center justify-center">
+                        <Trash2 size={16} className="text-danger-text" />
                       </button>
                     </div>
                   </div>
@@ -223,102 +257,98 @@ export default function POSPage() {
           </Card>
         </div>
 
+        {/* RIGHT SIDEBAR */}
         <div className="space-y-6">
+
+          {/* Assign Staff */}
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Assign Staff
-            </h2>
-            <select
-              value={selectedStaff}
-              onChange={(e) => setSelectedStaff(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              required
-            >
+            <h2 className="text-xl font-bold text-text-primary dark:text-text-primary mb-4">Assign Staff</h2>
+            <select value={selectedStaff} onChange={(e) => setSelectedStaff(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-border bg-background-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-violet-500"
+              required>
               <option value="">Select staff member</option>
               {staff.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name} - {member.role}
-                </option>
+                <option key={member.id} value={member.id}>{member.name} - {member.role}</option>
               ))}
             </select>
+            {staff.length === 0 && (
+              <p className="text-xs text-warning-text mt-2 flex items-center gap-1">
+                <AlertCircle size={12} /> No staff found. Add staff first.
+              </p>
+            )}
           </Card>
 
+          {/* Payment Method */}
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Payment Method
-            </h2>
+            <h2 className="text-xl font-bold text-text-primary dark:text-text-primary mb-4">Payment Method</h2>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { value: 'cash', label: 'Cash', icon: DollarSign },
-                { value: 'card', label: 'Card', icon: CreditCard },
-                { value: 'upi', label: 'UPI', icon: Smartphone },
+                { value: 'cash',   label: 'Cash',   icon: DollarSign },
+                { value: 'card',   label: 'Card',   icon: CreditCard },
+                { value: 'upi',    label: 'UPI',    icon: Smartphone },
                 { value: 'wallet', label: 'Wallet', icon: Wallet },
               ].map((method) => (
-                <button
-                  key={method.value}
-                  onClick={() => setPaymentMethod(method.value as any)}
+                <button key={method.value} onClick={() => setPaymentMethod(method.value as any)}
                   className={`p-3 rounded-xl border-2 transition-all ${
                     paymentMethod === method.value
-                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <method.icon size={20} className="mx-auto mb-1 text-gray-600 dark:text-gray-400" />
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {method.label}
-                  </div>
+                      ? 'border-violet-500 bg-accent-light dark:bg-violet-900/20'
+                      : 'border-border hover:border-violet-400'
+                  }`}>
+                  <method.icon size={20} className="mx-auto mb-1 text-text-secondary" />
+                  <div className="text-sm font-semibold text-text-primary">{method.label}</div>
                 </button>
               ))}
             </div>
           </Card>
 
+          {/* Bill Summary */}
           <Card>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Bill Summary
-            </h2>
+            <h2 className="text-xl font-bold text-text-primary dark:text-text-primary mb-4">Bill Summary</h2>
             <div className="space-y-3">
-              <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
+              <div className="flex justify-between text-text-secondary">
+                <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Discount</span>
+                <span className="text-text-secondary">Discount</span>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={discount}
-                    onChange={(e) => setDiscount(Math.max(0, Math.min(100, Number(e.target.value))))}
-                    className="w-16 px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-right"
-                    min="0"
-                    max="100"
-                  />
-                  <span className="text-gray-600 dark:text-gray-400">%</span>
+                  <input type="text" value={discount || ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setDiscount(Math.max(0, Math.min(100, Number(val))));
+                    }}
+                    className="w-16 px-2 py-1 rounded-lg border border-border bg-background-secondary text-text-primary text-right"
+                    placeholder="0" />
+                  <span className="text-text-secondary">%</span>
                 </div>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between text-red-600 dark:text-red-400">
-                  <span>Discount Amount</span>
-                  <span>-{formatCurrency(discountAmount)}</span>
+                <div className="flex justify-between text-danger-text">
+                  <span>Discount Amount</span><span>-{formatCurrency(discountAmount)}</span>
                 </div>
               )}
-              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white">
-                  <span>Total</span>
-                  <span>{formatCurrency(total)}</span>
+              <div className="pt-3 border-t border-border">
+                <div className="flex justify-between text-xl font-bold text-text-primary">
+                  <span>Total</span><span>{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>
           </Card>
 
-          <Button
-            onClick={handleCheckout}
-            className="w-full"
-            size="lg"
-            isLoading={loading}
-            disabled={selectedServices.length === 0 || !customerName || !customerPhone || !selectedStaff}
-          >
+          {/* Pay Later tip (removed) */}
+
+          {/* Complete Billing */}
+          <Button onClick={() => handleCheckout(false)} className="w-full" size="lg" isLoading={loading}>
             Complete Billing
           </Button>
+
+          {/* Pay Later */}
+          <button type="button" onClick={() => handleCheckout(true)}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition hover:bg-warning-bg disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ borderColor: '#D97706', color: '#B45309' }}>
+            <AlertCircle size={15} /> Pay Later
+          </button>
+
         </div>
       </div>
     </div>

@@ -1,11 +1,13 @@
-const mongoose = require('mongoose')
+const { DataTypes } = require('sequelize')
+const { sequelize } = require('../config/db')
 
-const paymentSchema = new mongoose.Schema({
-  booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
-  customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-  amount: { type: Number, required: true },
-  method: { type: String, enum: ['cash', 'card', 'upi', 'other'], default: 'cash' },
-  status: { type: String, enum: ['pending', 'paid', 'refunded'], default: 'pending' },
-}, { timestamps: true })
+const Payment = sequelize.define('Payment', {
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  bookingId: { type: DataTypes.UUID },
+  customerId: { type: DataTypes.UUID, allowNull: false },
+  amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+  method: { type: DataTypes.ENUM('cash', 'card', 'upi', 'wallet', 'other'), defaultValue: 'cash' },
+  status: { type: DataTypes.ENUM('pending', 'paid', 'completed', 'refunded', 'failed'), defaultValue: 'pending' },
+}, { tableName: 'payments' })
 
-module.exports = mongoose.model('Payment', paymentSchema)
+module.exports = Payment

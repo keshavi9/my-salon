@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, DollarSign, CreditCard, Smartphone, Wallet, TrendingUp } from 'lucide-react'
+import { Search, DollarSign, CreditCard, Smartphone, TrendingUp } from 'lucide-react'
+import DataTable, { type TableRow } from '@/components/ui/DataTable'
 import Card from '@/components/ui/Card'
-import Badge from '@/components/ui/Badge'
 import Loader from '@/components/ui/Loader'
 import { formatCurrency, formatDate, debounce } from '@/utils/helpers'
 import api from '@/lib/api'
@@ -28,44 +28,67 @@ export default function PaymentsPage() {
       if (statusFilter !== 'all') params += `status=${statusFilter}&`
       const res = await api.get(`/payments${params}`)
       setPayments(res.data.data || res.data || [])
-    } catch (error) {
-      console.error('Failed to fetch payments:', error)
+    } catch {
+      setPayments([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSearch = debounce((value: string) => fetchPayments(value), 500)
+  const handleSearch = debounce((v: string) => fetchPayments(v), 500)
+
+  const totalRevenue = payments.filter(p => p.status === 'completed').reduce((s, p) => s + p.amount, 0)
+  const methodTotals = {
+    cash: payments.filter(p => p.method === 'cash' && p.status === 'completed').reduce((s, p) => s + p.amount, 0),
+    card: payments.filter(p => p.method === 'card' && p.status === 'completed').reduce((s, p) => s + p.amount, 0),
+    upi: payments.filter(p => p.method === 'upi' && p.status === 'completed').reduce((s, p) => s + p.amount, 0),
+  }
+
+  const rows: TableRow[] = payments.map(p => ({
+    id: p.id,
+    name: p.customerId || 'Customer',
+    phone: '—',
+    service: '—',
+    stylist: '—',
+    date: p.createdAt,
+    amount: p.amount,
+    status: p.status,
+    paymentMethod: p.method,
+    // extra
+    bookingId: p.bookingId,
+    transactionId: p.transactionId,
+    notes: p.notes,
+  }))
+
+  const handleDelete = async (row: TableRow) => {
+    try {
+      await api.delete(`/payments/${row.id}`)
+    } catch { /* silent */ }
+    setPayments(prev => prev.filter(p => p.id !== row.id))
+  }
 
   if (loading) return <div className="flex items-center justify-center h-96"><Loader size="lg" /></div>
-
-  const totalRevenue = payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0)
-  const methodTotals = {
-    cash: payments.filter(p => p.method === 'cash' && p.status === 'completed').reduce((sum, p) => sum + p.amount, 0),
-    card: payments.filter(p => p.method === 'card' && p.status === 'completed').reduce((sum, p) => sum + p.amount, 0),
-    upi: payments.filter(p => p.method === 'upi' && p.status === 'completed').reduce((sum, p) => sum + p.amount, 0),
-    wallet: payments.filter(p => p.method === 'wallet' && p.status === 'completed').reduce((sum, p) => sum + p.amount, 0),
-  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payments</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Track all payment transactions</p>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Payments</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Track all payment transactions</p>
       </div>
 
+      {/* Metric cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-100 dark:bg-violet-900/20' },
-          { label: 'Cash', value: formatCurrency(methodTotals.cash), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-100 dark:bg-emerald-900/20' },
-          { label: 'Card', value: formatCurrency(methodTotals.card), icon: CreditCard, color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/20' },
-          { label: 'UPI', value: formatCurrency(methodTotals.upi), icon: Smartphone, color: 'text-amber-600', bg: 'bg-amber-100 dark:bg-amber-900/20' },
+          { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: TrendingUp, color: 'text-[var(--accent)]', bg: 'bg-[var(--accent)]/10' },
+          { label: 'Cash', value: formatCurrency(methodTotals.cash), icon: DollarSign, color: 'text-success-text', bg: 'bg-success-bg dark:bg-success-bg' },
+          { label: 'Card', value: formatCurrency(methodTotals.card), icon: CreditCard, color: 'text-info-text', bg: 'bg-info-bg dark:bg-info-bg' },
+          { label: 'UPI', value: formatCurrency(methodTotals.upi), icon: Smartphone, color: 'text-warning-text', bg: 'bg-warning-bg dark:bg-warning-bg' },
         ].map(stat => (
           <Card key={stat.label}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</span>
-              <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
-                <stat.icon size={20} className={stat.color} />
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{stat.label}</span>
+              <div className={`w-9 h-9 rounded-xl ${stat.bg} flex items-center justify-center`}>
+                <stat.icon size={18} className={stat.color} />
               </div>
             </div>
             <div className={`text-xl font-bold ${stat.color}`}>{stat.value}</div>
@@ -73,78 +96,48 @@ export default function PaymentsPage() {
         ))}
       </div>
 
-      <Card>
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search payments..."
-              value={searchTerm}
-              onChange={e => { setSearchTerm(e.target.value); handleSearch(e.target.value) }}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-            />
-          </div>
-          <select value={methodFilter} onChange={e => setMethodFilter(e.target.value)} className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
-            <option value="all">All Methods</option>
-            <option value="cash">Cash</option>
-            <option value="card">Card</option>
-            <option value="upi">UPI</option>
-            <option value="wallet">Wallet</option>
-          </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500">
-            <option value="all">All Status</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-          </select>
-          <div className="flex items-center gap-2">
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" />
-            <span className="text-gray-500">–</span>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm" />
-          </div>
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row items-center gap-3">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2" size={16} style={{ color: 'var(--text-secondary)' }} />
+          <input type="text" placeholder="Search payments..." value={searchTerm}
+            onChange={e => { setSearchTerm(e.target.value); handleSearch(e.target.value) }}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }} />
         </div>
+        {[
+          { value: methodFilter, set: setMethodFilter, opts: [['all', 'All Methods'], ['cash', 'Cash'], ['card', 'Card'], ['upi', 'UPI']] },
+          { value: statusFilter, set: setStatusFilter, opts: [['all', 'All Status'], ['completed', 'Completed'], ['pending', 'Pending'], ['failed', 'Failed'], ['refunded', 'Refunded']] },
+        ].map((f, i) => (
+          <select key={i} value={f.value} onChange={e => f.set(e.target.value)}
+            className="px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }}>
+            {f.opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        ))}
+        <div className="flex items-center gap-2">
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+          <span style={{ color: 'var(--text-secondary)' }}>–</span>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+        </div>
+      </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                {['Date', 'Booking ID', 'Amount', 'Method', 'Status', 'Transaction ID'].map(h => (
-                  <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {payments.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    <DollarSign size={48} className="mx-auto text-gray-400 mb-4" />
-                    No payments found
-                  </td>
-                </tr>
-              ) : payments.map(payment => (
-                <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{formatDate(payment.createdAt)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 font-mono">{payment.bookingId?.slice(-8) || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(payment.amount)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {payment.method === 'cash' && <DollarSign size={14} className="text-emerald-600" />}
-                      {payment.method === 'card' && <CreditCard size={14} className="text-blue-600" />}
-                      {payment.method === 'upi' && <Smartphone size={14} className="text-amber-600" />}
-                      {payment.method === 'wallet' && <Wallet size={14} className="text-violet-600" />}
-                      <span className="text-sm capitalize text-gray-900 dark:text-white">{payment.method}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4"><Badge status={payment.status}>{payment.status}</Badge></td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 font-mono">{payment.transactionId || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      {/* Table */}
+      <DataTable
+        rows={rows}
+        onSendMsg={row => alert(`Send message to ${row.name}`)}
+        onDelete={handleDelete}
+        extraFields={[
+          { key: 'bookingId', label: 'Booking ID' },
+          { key: 'transactionId', label: 'Transaction ID' },
+          { key: 'notes', label: 'Notes' },
+        ]}
+        emptyMessage="No payments found"
+      />
     </div>
   )
 }

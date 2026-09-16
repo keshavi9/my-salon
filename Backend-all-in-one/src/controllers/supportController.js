@@ -1,258 +1,163 @@
-const SupportTicket = require('../models/SupportTicket');
-const nodemailer = require('nodemailer');
+const { Op } = require('sequelize')
+const SupportTicket = require('../models/SupportTicket')
+const nodemailer = require('nodemailer')
+const asyncHandler = require('express-async-handler')
+const { z } = require('zod')
+const { v4: uuidv4 } = require('uuid')
 
-// Email transporter configuration
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'support@hairahmedabad.com',
-    pass: process.env.EMAIL_PASSWORD || 'your-app-password'
-  }
-});
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+})
 
-// Generate unique ticket ID
-const generateTicketId = () => {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substr(2, 5);
-  return `TKT-${timestamp}${random}`.toUpperCase();
-};
-
-// Send email to developer team
 const sendTicketEmail = async (ticket) => {
-  const mailOptions = {
+  if (!process.env.DEV_TEAM_EMAIL) return; // avoid crashing if not configured
+  await transporter.sendMail({
     from: ticket.adminEmail,
-    to: process.env.DEV_TEAM_EMAIL || 'dev-team@hairahmedabad.com',
+    to: process.env.DEV_TEAM_EMAIL,
     subject: `[${ticket.category.toUpperCase()}] [${ticket.priority.toUpperCase()}] ${ticket.subject}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #9D679F, #6F5AA3); padding: 20px; border-radius: 10px 10px 0 0;">
-          <h2 style="color: white; margin: 0;"> New Support Ticket</h2>
+          <h2 style="color: white; margin: 0;">New Support Ticket</h2>
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px;">
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 10px; font-weight: bold;">Ticket ID:</td>
-              <td style="padding: 10px;">${ticket.ticketId}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; font-weight: bold;">Subject:</td>
-              <td style="padding: 10px;">${ticket.subject}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; font-weight: bold;">Category:</td>
-              <td style="padding: 10px;"><span style="background: #9D679F; color: white; padding: 5px 10px; border-radius: 5px;">${ticket.category}</span></td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; font-weight: bold;">Priority:</td>
-              <td style="padding: 10px;"><span style="background: ${ticket.priority === 'critical' ? '#D88385' : ticket.priority === 'high' ? '#C7923E' : ticket.priority === 'medium' ? '#6D91BF' : '#6F9F8F'}; color: white; padding: 5px 10px; border-radius: 5px;">${ticket.priority}</span></td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; font-weight: bold;">From:</td>
-              <td style="padding: 10px;">${ticket.adminEmail}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px; font-weight: bold;">Created:</td>
-              <td style="padding: 10px;">${new Date(ticket.createdAt).toLocaleString()}</td>
-            </tr>
-          </table>
-          
-          <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 5px;">
-            <h3 style="margin-top: 0;">Description:</h3>
-            <p style="white-space: pre-wrap;">${ticket.description}</p>
-          </div>
-          
-          ${ticket.attachments && ticket.attachments.length > 0 ? `
-            <div style="margin-top: 20px;">
-              <h3>Attachments:</h3>
-              <ul>
-                ${ticket.attachments.map(att => `<li>${att.fileName}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-          
-          <div style="margin-top: 20px; text-align: center;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/support/${ticket.ticketId}" 
-               style="background: linear-gradient(135deg, #9D679F, #6F5AA3); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; display: inline-block;">
-              View Ticket
-            </a>
-          </div>
+          <p><strong>Ticket ID:</strong> ${ticket.ticketId}</p>
+          <p><strong>Subject:</strong> ${ticket.subject}</p>
+          <p><strong>Category:</strong> ${ticket.category}</p>
+          <p><strong>Priority:</strong> ${ticket.priority}</p>
+          <p><strong>From:</strong> ${ticket.adminEmail}</p>
+          <p><strong>Description:</strong></p>
+          <p style="white-space: pre-wrap;">${ticket.description}</p>
         </div>
       </div>
-    `
-  };
+    `,
+  })
+}
 
-  await transporter.sendMail(mailOptions);
-};
+const ticketSchema = z.object({
+  subject: z.string().min(1, 'Subject is required'),
+  category: z.string().min(1, 'Category is required').transform(v => v.toLowerCase()),
+  priority: z.string().min(1, 'Priority is required').transform(v => v.toLowerCase()),
+  description: z.string().min(1, 'Description is required'),
+  adminEmail: z.string().email('Invalid email'),
+  attachments: z.array(z.string()).optional(),
+})
 
-// Create new support ticket
-exports.createTicket = async (req, res) => {
+const messageSchema = z.object({
+  sender: z.string().min(1, 'Sender is required'),
+  message: z.string().min(1, 'Message cannot be empty'),
+  isAdmin: z.boolean().optional(),
+})
+
+exports.createTicket = asyncHandler(async (req, res) => {
+  const validated = ticketSchema.parse(req.body)
+  const ticketId = `TKT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${uuidv4().slice(0, 8).toUpperCase()}`
+  
+  const ticket = await SupportTicket.create({
+    ...validated,
+    ticketId,
+    status: 'open',
+  })
+
   try {
-    const { subject, category, priority, description, adminEmail, attachments } = req.body;
-
-    const ticketId = generateTicketId();
-
-    const ticket = new SupportTicket({
-      ticketId,
-      subject,
-      category,
-      priority,
-      description,
-      adminEmail,
-      attachments: attachments || [],
-      status: 'open'
-    });
-
-    await ticket.save();
-
-    // Send email to developer team
-    try {
-      await sendTicketEmail(ticket);
-      ticket.emailSent = true;
-      ticket.emailSentAt = new Date();
-      await ticket.save();
-    } catch (emailError) {
-      console.error('Email send failed:', emailError);
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+      await sendTicketEmail(ticket)
+      await ticket.update({ emailSent: true, emailSentAt: new Date() })
     }
-
-    res.status(201).json({
-      success: true,
-      message: 'Support ticket created successfully',
-      data: ticket
-    });
-  } catch (error) {
-    console.error('Create ticket error:', error);
-    res.status(500).json({ success: false, message: 'Failed to create support ticket', error: error.message });
+  } catch (emailErr) {
+    console.error('Email send failed:', emailErr.message)
   }
-};
+  
+  res.status(201).json({ success: true, message: 'Support ticket created successfully', data: ticket })
+})
 
-// Get all tickets
-exports.getAllTickets = async (req, res) => {
-  try {
-    const { status, category, priority, search } = req.query;
-    const filter = {};
-
-    if (status && status !== 'all') filter.status = status;
-    if (category) filter.category = category;
-    if (priority) filter.priority = priority;
-    if (search) {
-      filter.$or = [
-        { ticketId: { $regex: search, $options: 'i' } },
-        { subject: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    const tickets = await SupportTicket.find(filter).sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: tickets,
-      total: tickets.length
-    });
-  } catch (error) {
-    console.error('Get tickets error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch tickets', error: error.message });
+exports.getAllTickets = asyncHandler(async (req, res) => {
+  const { status, category, priority, search, page, limit } = req.query
+  const where = {}
+  if (status && status !== 'all') where.status = status
+  if (category) where.category = category
+  if (priority) where.priority = priority
+  if (search) {
+    where[Op.or] = [
+      { ticketId: { [Op.iLike]: `%${search}%` } },
+      { subject: { [Op.iLike]: `%${search}%` } },
+    ]
   }
-};
 
-// Get single ticket
-exports.getTicketById = async (req, res) => {
-  try {
-    const ticket = await SupportTicket.findOne({ ticketId: req.params.ticketId });
+  const pageNum = parseInt(page) || 1
+  const limitNum = parseInt(limit) || 20
+  const offset = (pageNum - 1) * limitNum
 
-    if (!ticket) {
-      return res.status(404).json({ success: false, message: 'Ticket not found' });
-    }
+  const { count, rows } = await SupportTicket.findAndCountAll({
+    where,
+    limit: limitNum,
+    offset,
+    order: [['createdAt', 'DESC']]
+  })
+  res.json({ success: true, data: rows, total: count, page: pageNum, limit: limitNum })
+})
 
-    res.json({ success: true, data: ticket });
-  } catch (error) {
-    console.error('Get ticket error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch ticket', error: error.message });
+exports.getTicketById = asyncHandler(async (req, res) => {
+  const ticket = await SupportTicket.findOne({ where: { ticketId: req.params.ticketId } })
+  if (!ticket) {
+    res.status(404)
+    throw new Error('Ticket not found')
   }
-};
+  res.json({ success: true, data: ticket })
+})
 
-// Update ticket status
-exports.updateTicketStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const ticket = await SupportTicket.findOne({ ticketId: req.params.ticketId });
-
-    if (!ticket) {
-      return res.status(404).json({ success: false, message: 'Ticket not found' });
-    }
-
-    ticket.status = status;
-    if (status === 'resolved' || status === 'closed') {
-      ticket.resolvedAt = new Date();
-    }
-
-    await ticket.save();
-
-    res.json({
-      success: true,
-      message: 'Ticket status updated successfully',
-      data: ticket
-    });
-  } catch (error) {
-    console.error('Update ticket error:', error);
-    res.status(500).json({ success: false, message: 'Failed to update ticket', error: error.message });
+exports.updateTicketStatus = asyncHandler(async (req, res) => {
+  const ticket = await SupportTicket.findOne({ where: { ticketId: req.params.ticketId } })
+  if (!ticket) {
+    res.status(404)
+    throw new Error('Ticket not found')
   }
-};
-
-// Add message to ticket
-exports.addMessage = async (req, res) => {
-  try {
-    const { sender, message, isAdmin } = req.body;
-    const ticket = await SupportTicket.findOne({ ticketId: req.params.ticketId });
-
-    if (!ticket) {
-      return res.status(404).json({ success: false, message: 'Ticket not found' });
-    }
-
-    ticket.messages.push({ sender, message, isAdmin, createdAt: new Date() });
-    await ticket.save();
-
-    res.json({
-      success: true,
-      message: 'Message added successfully',
-      data: ticket
-    });
-  } catch (error) {
-    console.error('Add message error:', error);
-    res.status(500).json({ success: false, message: 'Failed to add message', error: error.message });
+  const status = req.body.status
+  if (!status) {
+    res.status(400)
+    throw new Error('Status is required')
   }
-};
+  const updates = { status }
+  if (status === 'resolved' || status === 'closed') updates.resolvedAt = new Date()
+  await ticket.update(updates)
+  res.json({ success: true, message: 'Ticket status updated successfully', data: ticket })
+})
 
-// Get ticket statistics
-exports.getTicketStats = async (req, res) => {
-  try {
-    const totalTickets = await SupportTicket.countDocuments();
-    const openTickets = await SupportTicket.countDocuments({ status: 'open' });
-    const inProgressTickets = await SupportTicket.countDocuments({ status: 'in-progress' });
-    const resolvedTickets = await SupportTicket.countDocuments({ status: 'resolved' });
-    const closedTickets = await SupportTicket.countDocuments({ status: 'closed' });
-
-    const categoryStats = await SupportTicket.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 } } }
-    ]);
-
-    const priorityStats = await SupportTicket.aggregate([
-      { $group: { _id: '$priority', count: { $sum: 1 } } }
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        total: totalTickets,
-        open: openTickets,
-        inProgress: inProgressTickets,
-        resolved: resolvedTickets,
-        closed: closedTickets,
-        byCategory: categoryStats,
-        byPriority: priorityStats
-      }
-    });
-  } catch (error) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch statistics', error: error.message });
+exports.addMessage = asyncHandler(async (req, res) => {
+  const ticket = await SupportTicket.findOne({ where: { ticketId: req.params.ticketId } })
+  if (!ticket) {
+    res.status(404)
+    throw new Error('Ticket not found')
   }
-};
+  const validated = messageSchema.parse(req.body)
+  const messages = [...(ticket.messages || []), { ...validated, createdAt: new Date() }]
+  await ticket.update({ messages })
+  res.json({ success: true, message: 'Message added successfully', data: ticket })
+})
+
+exports.getTicketStats = asyncHandler(async (req, res) => {
+  const [total, open, inProgress, resolved, closed] = await Promise.all([
+    SupportTicket.count(),
+    SupportTicket.count({ where: { status: 'open' } }),
+    SupportTicket.count({ where: { status: 'in-progress' } }),
+    SupportTicket.count({ where: { status: 'resolved' } }),
+    SupportTicket.count({ where: { status: 'closed' } }),
+  ])
+
+  const { sequelize } = require('../config/db')
+  const [byCategory] = await sequelize.query(
+    `SELECT category AS "_id", COUNT(*) AS count FROM support_tickets GROUP BY category`
+  )
+  const [byPriority] = await sequelize.query(
+    `SELECT priority AS "_id", COUNT(*) AS count FROM support_tickets GROUP BY priority`
+  )
+
+  res.json({
+    success: true,
+    data: { total, open, inProgress, resolved, closed, byCategory, byPriority },
+  })
+})

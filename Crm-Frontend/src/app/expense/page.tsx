@@ -44,18 +44,18 @@ const SEED: Record<BranchId, Expense[]> = {
 const CATEGORIES = ['All', 'Products', 'Utilities', 'Maintenance', 'Salary', 'Other']
 
 const CAT_META: Record<string, { icon: React.ElementType; gradient: string; color: string; light: string }> = {
-  Products:    { icon: ShoppingCart,  gradient: 'from-[#6D91BF] to-[#5F4C86]', color: '#6D91BF', light: '#6D91BF18' },
-  Utilities:   { icon: Zap,           gradient: 'from-[#C7923E] to-[#D88385]', color: '#C7923E', light: '#C7923E18' },
-  Maintenance: { icon: Wrench,        gradient: 'from-[#6F9F8F] to-[#6D91BF]', color: '#6F9F8F', light: '#6F9F8F18' },
-  Salary:      { icon: Wallet,        gradient: 'from-[#6F5AA3] to-[#9D679F]', color: '#6F5AA3', light: '#6F5AA318' },
-  Other:       { icon: MoreHorizontal, gradient: 'from-[#C96F9B] to-[#D88385]', color: '#C96F9B', light: '#C96F9B18' },
+  Products:    { icon: ShoppingCart,  gradient: 'from-[var(--info)] to-[var(--accent-dark)]', color: 'var(--info)', light: 'var(--info-bg)' },
+  Utilities:   { icon: Zap,           gradient: 'from-[var(--warning)] to-[var(--danger)]', color: 'var(--warning)', light: 'var(--warning-bg)' },
+  Maintenance: { icon: Wrench,        gradient: 'from-[var(--success)] to-[var(--info)]', color: 'var(--success)', light: 'var(--success-bg)' },
+  Salary:      { icon: Wallet,        gradient: 'from-accent-dark to-accent', color: 'var(--accent-dark)', light: 'var(--accent-light)' },
+  Other:       { icon: MoreHorizontal, gradient: 'from-[var(--accent)] to-[var(--danger)]', color: 'var(--accent)', light: 'var(--accent-light)' },
 }
 
 const METHOD_COLOR: Record<string, string> = {
-  Cash: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  UPI:  'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  Card: 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-  Bank: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  Cash: 'bg-success-bg text-success-text dark:bg-emerald-900/30 dark:text-emerald-300',
+  UPI:  'bg-info-bg text-info-text dark:bg-blue-900/30 dark:text-blue-300',
+  Card: 'bg-accent-light text-accent-dark dark:bg-purple-900/30 dark:text-purple-300',
+  Bank: 'bg-warning-bg text-warning-text dark:bg-amber-900/30 dark:text-amber-300',
 }
 
 export default function ExpensePage() {
@@ -97,61 +97,57 @@ export default function ExpensePage() {
   return (
     <main className="min-h-full space-y-6 pb-6">
 
-      {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#6F5AA3] via-[#9D679F] to-[#C96F9B] px-6 py-7 shadow-[0_20px_50px_rgba(111,90,163,0.35)]">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-8 left-1/3 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-              <Wallet size={12} className="animate-pulse" />
-              Expense Tracker
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-sm">Expenses</h1>
-            <p className="mt-1 text-sm font-medium text-white/80">{expenses.length} records · {activeBranch.short}</p>
+      {/* ── Page Header ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-accent">
+            <Wallet size={12} className="animate-pulse" />
+            Expense Tracker
           </div>
-          <div className="flex flex-col items-start gap-2 sm:items-end">
-            <Link href="/expense/add"
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-white/30 bg-white/20 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30">
-              <Plus size={16} /> Add Expense
-            </Link>
-            <span className="flex items-center gap-1 rounded-full border border-white/30 bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-white/80">
-              <MapPin size={10} />{activeBranch.name}
-            </span>
-          </div>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] dark:text-text-primary">Expenses</h1>
+          <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary">{expenses.length} records · {activeBranch.short}</p>
+        </div>
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <Link href="/expense/add"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-accent-dark to-accent px-5 text-sm font-semibold text-white shadow-md transition hover:opacity-90">
+            <Plus size={16} /> Add Expense
+          </Link>
+          <span className="flex items-center gap-1 rounded-full bg-hover px-2.5 py-0.5 text-[11px] font-medium text-text-secondary dark:bg-background-secondary/10 dark:text-text-secondary">
+            <MapPin size={10} />{activeBranch.name}
+          </span>
         </div>
       </div>
 
       {/* ── Summary Cards ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
-          { label: 'Total Expenses',  value: `₹${total.toLocaleString()}`,     sub: 'All records',     gradient: 'from-[#6F5AA3] to-[#9D679F]', icon: TrendingDown },
-          { label: 'This Month',      value: `₹${thisMonth.toLocaleString()}`, sub: 'January 2024',    gradient: 'from-[#C7923E] to-[#D88385]', icon: Receipt      },
-          { label: 'Avg per Expense', value: `₹${avg.toLocaleString()}`,       sub: 'Per transaction', gradient: 'from-[#6F9F8F] to-[#6D91BF]', icon: ArrowUpRight },
+          { label: 'Total Expenses',  value: `₹${total.toLocaleString()}`,     sub: 'All records',     gradient: 'from-accent-dark to-accent', icon: TrendingDown },
+          { label: 'This Month',      value: `₹${thisMonth.toLocaleString()}`, sub: 'January 2024',    gradient: 'from-[var(--warning)] to-[var(--danger)]', icon: Receipt      },
+          { label: 'Avg per Expense', value: `₹${avg.toLocaleString()}`,       sub: 'Per transaction', gradient: 'from-[var(--success)] to-[var(--info)]', icon: ArrowUpRight },
         ].map(({ label, value, sub, gradient, icon: Icon }) => (
-          <div key={label} className="group relative overflow-hidden rounded-2xl border border-white/80 bg-white p-5 shadow-[0_18px_45px_rgba(36,21,26,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(36,21,26,0.13)] dark:border-white/10 dark:bg-white/[0.04]">
+          <div key={label} className="group relative overflow-hidden rounded-2xl border border-border bg-background-secondary p-5 shadow-[0_18px_45px_rgba(36,21,26,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_55px_rgba(36,21,26,0.13)] dark:border-border dark:bg-background-secondary/[0.04]">
             <div className={`absolute inset-x-0 top-0 h-0.5 rounded-t-2xl bg-gradient-to-r ${gradient}`} />
             <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
               <Icon size={19} className="text-white" />
             </div>
-            <p className="mt-5 text-3xl font-bold tracking-tight text-[#24151A] dark:text-white">{value}</p>
+            <p className="mt-5 text-3xl font-bold tracking-tight text-[var(--text-primary)] dark:text-text-primary">{value}</p>
             <div className="mt-1 flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{label}</p>
-              <p className="text-xs text-gray-400">{sub}</p>
+              <p className="text-sm font-medium text-text-secondary dark:text-text-secondary">{label}</p>
+              <p className="text-xs text-text-secondary">{sub}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* ── Category Breakdown ── */}
-      <div className="rounded-2xl border border-white/80 bg-white p-5 shadow-[0_18px_45px_rgba(36,21,26,0.07)] dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="rounded-2xl border border-border bg-background-secondary p-5 shadow-[0_18px_45px_rgba(36,21,26,0.07)] dark:border-border dark:bg-background-secondary/[0.04]">
         <div className="mb-4 flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#6F5AA3] to-[#9D679F]">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent-dark to-accent">
             <TrendingDown size={13} className="text-white" />
           </div>
-          <h2 className="text-base font-semibold text-[#24151A] dark:text-white">Category Breakdown</h2>
+          <h2 className="text-base font-semibold text-[var(--text-primary)] dark:text-text-primary">Category Breakdown</h2>
           <span className="ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-            style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+            style={{ background: 'var(--accent)', color: 'var(--accent)' }}>
             <MapPin size={9} />{activeBranch.short}
           </span>
         </div>
@@ -164,7 +160,7 @@ export default function ExpensePage() {
               const pct  = total ? Math.round((cat.amount / total) * 100) : 0
               const Icon = meta.icon
               return (
-                <div key={cat.name} className="relative overflow-hidden rounded-xl border border-gray-100 bg-[#FFFDFC] p-3 dark:border-white/10 dark:bg-white/[0.03]">
+                <div key={cat.name} className="relative overflow-hidden rounded-xl border border-border bg-[var(--bg-secondary)] p-3 dark:border-border dark:bg-background-secondary/[0.03]">
                   <div className={`absolute inset-y-0 left-0 w-1 rounded-l-xl bg-gradient-to-b ${meta.gradient}`} />
                   <div className="flex items-center gap-3 pl-2">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: meta.light }}>
@@ -172,13 +168,13 @@ export default function ExpensePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-semibold text-[#24151A] dark:text-white">{cat.name}</span>
+                        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-text-primary">{cat.name}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold" style={{ color: meta.color }}>₹{cat.amount.toLocaleString()}</span>
                           <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: meta.light, color: meta.color }}>{pct}%</span>
                         </div>
                       </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-hover dark:bg-background-secondary/10">
                         <div className={`h-full rounded-full bg-gradient-to-r ${meta.gradient} transition-all duration-700`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
@@ -193,9 +189,9 @@ export default function ExpensePage() {
       {/* ── Filters ── */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1 max-w-sm">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary" />
           <input type="text" placeholder="Search expenses..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#9D679F]"
+            className="w-full rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }} />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -203,7 +199,7 @@ export default function ExpensePage() {
             <button key={c} onClick={() => setCategory(c)}
               className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition"
               style={category === c
-                ? { background: 'linear-gradient(135deg,#6F5AA3,#9D679F)', color: '#fff' }
+                ? { background: 'linear-gradient(135deg,var(--accent-dark),var(--accent))', color: '#fff' }
                 : { border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)' }}>
               {c}
             </button>
@@ -212,8 +208,8 @@ export default function ExpensePage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-hidden rounded-2xl border border-white/80 bg-white shadow-[0_18px_45px_rgba(36,21,26,0.07)] dark:border-white/10 dark:bg-white/[0.04]">
-        <div className="h-0.5 w-full bg-gradient-to-r from-[#6F5AA3] via-[#9D679F] to-[#C96F9B]" />
+      <div className="overflow-hidden rounded-2xl border border-border bg-background-secondary shadow-[0_18px_45px_rgba(36,21,26,0.07)] dark:border-border dark:bg-background-secondary/[0.04]">
+        <div className="h-0.5 w-full bg-gradient-to-r from-accent-dark via-accent to-[var(--accent)]" />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -247,7 +243,7 @@ export default function ExpensePage() {
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="text-base font-bold" style={{ color: '#6F5AA3' }}>₹{e.amount.toLocaleString()}</span>
+                      <span className="text-base font-bold" style={{ color: 'var(--accent-dark)' }}>₹{e.amount.toLocaleString()}</span>
                     </td>
                     <td className="px-5 py-4">
                       <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${mCls}`}>{e.paymentMethod}</span>
@@ -256,7 +252,7 @@ export default function ExpensePage() {
                     <td className="px-5 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>{e.notes || '—'}</td>
                     <td className="px-5 py-4">
                       <button onClick={() => handleDelete(e.id)}
-                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20">
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-danger-bg hover:text-danger-text dark:hover:bg-red-900/20">
                         <Trash2 size={12} /> Delete
                       </button>
                     </td>

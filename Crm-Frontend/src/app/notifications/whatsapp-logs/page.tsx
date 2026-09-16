@@ -6,8 +6,8 @@ import { Bell, CheckCircle2, XCircle, Clock, Search, MessageSquare } from 'lucid
 const logs = [
   { id: 1, type: 'Booking Confirmation', client: 'Priya Sharma',  avatar: 'PS', color: 'bg-rose-500', phone: '+91 98765 43210', sentAt: '2024-01-15 10:05', status: 'Delivered', template: 'booking_confirm' },
   { id: 2, type: '24h Reminder',         client: 'Riya Patel',    avatar: 'RP', color: 'bg-sky-500',    phone: '+91 98765 43211', sentAt: '2024-01-14 11:00', status: 'Delivered', template: 'reminder_24h' },
-  { id: 3, type: 'Birthday Benefit',     client: 'Anita Verma',   avatar: 'AV', color: 'bg-emerald-500',phone: '+91 98765 43212', sentAt: '2024-01-01 09:00', status: 'Delivered', template: 'birthday_offer' },
-  { id: 4, type: 'Re-engagement',        client: 'Meena Joshi',   avatar: 'MJ', color: 'bg-amber-500',  phone: '+91 98765 43213', sentAt: '2024-01-08 10:00', status: 'Failed',    template: 'dormant_reengagement' },
+  { id: 3, type: 'Birthday Benefit',     client: 'Anita Verma',   avatar: 'AV', color: 'bg-success',phone: '+91 98765 43212', sentAt: '2024-01-01 09:00', status: 'Delivered', template: 'birthday_offer' },
+  { id: 4, type: 'Re-engagement',        client: 'Meena Joshi',   avatar: 'MJ', color: 'bg-warning',  phone: '+91 98765 43213', sentAt: '2024-01-08 10:00', status: 'Failed',    template: 'dormant_reengagement' },
   { id: 5, type: 'Invoice PDF',          client: 'Sunita Rao',    avatar: 'SR', color: 'bg-rose-500',   phone: '+91 98765 43214', sentAt: '2024-01-13 16:30', status: 'Delivered', template: 'invoice_pdf' },
   { id: 6, type: 'Booking Confirmation', client: 'Kavita Singh',  avatar: 'KS', color: 'bg-pink-500',   phone: '+91 98765 43215', sentAt: '2024-01-13 14:00', status: 'Pending',   template: 'booking_confirm' },
 ]
@@ -15,7 +15,7 @@ const logs = [
 const typeColors: Record<string, { bg: string; text: string }> = {
   'Booking Confirmation': { bg: '#6D91BF18', text: '#6D91BF' },
   '24h Reminder':         { bg: '#C7923E18', text: '#C7923E' },
-  'Birthday Benefit':     { bg: '#C96F9B18', text: '#C96F9B' },
+  'Birthday Benefit':     { bg: 'var(--accent-light)18', text: 'var(--accent-light)' },
   'Re-engagement':        { bg: '#D8838518', text: '#D88385' },
   'Invoice PDF':          { bg: '#6F5AA318', text: '#6F5AA3' },
 }
@@ -66,7 +66,7 @@ export default function WhatsAppLogsPage() {
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-secondary)' }} />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by client or type…"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }} />
         </div>
         <div className="flex gap-2">
@@ -75,7 +75,7 @@ export default function WhatsAppLogsPage() {
               className="px-3.5 py-2.5 rounded-xl text-xs font-semibold transition"
               style={{
                 background: statusFilter === s ? '#6F5AA3' : 'transparent',
-                color: statusFilter === s ? '#fff' : 'var(--text-secondary)',
+                color: statusFilter === s ? 'var(--bg-secondary)' : 'var(--text-secondary)',
                 border: statusFilter === s ? 'none' : '1px solid var(--border)',
               }}>
               {s}
@@ -87,7 +87,7 @@ export default function WhatsAppLogsPage() {
       {/* Log table */}
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2 px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <Bell size={15} className="text-rose-500" />
+          <Bell size={15} className="text-danger" />
           <h2 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>WhatsApp Message Log</h2>
           <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400 font-semibold">
             {filtered.length} messages

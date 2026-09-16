@@ -59,12 +59,12 @@ export default function PhoneInput({
   return (
     <div className={className}>
       {label && (
-        <label className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-          {label} {required && <span className="text-red-500">*</span>}
+        <label className="mb-2 block text-sm font-semibold text-text-secondary dark:text-text-secondary">
+          {label} {required && <span className="text-danger">*</span>}
         </label>
       )}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-gray-600 dark:text-gray-400">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-medium text-text-secondary dark:text-text-secondary">
           +91
         </span>
         <input
@@ -76,7 +76,7 @@ export default function PhoneInput({
           onPaste={handlePaste}
           placeholder={placeholder}
           required={required}
-          className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 pl-12 text-gray-900 focus:outline-none focus:ring-2 focus:ring-salon-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          className="w-full rounded-xl border border-border bg-background-secondary px-4 py-2.5 pl-12 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent dark:border-gray-600 dark:bg-background-secondary dark:text-text-primary"
         />
       </div>
     </div>

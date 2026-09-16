@@ -150,14 +150,14 @@ export class BookingWorkflowEngine {
 export function getStatusBadge(status: AttendanceStatus | PaymentStatus) {
   const styles: Record<string, { bg: string; text: string; border: string }> = {
     // Attendance statuses
-    Booked: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-800' },
-    Checked_In: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800' },
-    In_Service: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800' },
-    Completed: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-400', border: 'border-green-200 dark:border-green-800' },
+    Booked: { bg: 'bg-info-bg dark:bg-info-bg', text: 'text-info-text dark:text-info-text', border: 'border-info-border dark:border-info-border' },
+    Checked_In: { bg: 'bg-accent-light dark:bg-accent-light', text: 'text-accent-dark dark:text-accent-light', border: 'border-accent-light dark:border-accent-light' },
+    In_Service: { bg: 'bg-warning-bg dark:bg-warning-bg', text: 'text-warning-text dark:text-warning-text', border: 'border-warning-border dark:border-warning-border' },
+    Completed: { bg: 'bg-success-bg dark:bg-success-bg', text: 'text-success-text dark:text-success-text', border: 'border-success-border dark:border-success-border' },
     
     // Payment statuses
-    Unpaid: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', border: 'border-red-200 dark:border-red-800' },
-    Paid: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-800' }
+    Unpaid: { bg: 'bg-danger-bg dark:bg-danger-bg', text: 'text-danger-text dark:text-danger-text', border: 'border-danger-border dark:border-danger-border' },
+    Paid: { bg: 'bg-success-bg dark:bg-success-bg', text: 'text-success-text dark:text-success-text', border: 'border-success-border dark:border-success-border' }
   }
 
   return styles[status] || styles.Booked

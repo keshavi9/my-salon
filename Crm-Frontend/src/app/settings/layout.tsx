@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { User, Lock, Bell, Settings } from 'lucide-react'
+import { User, Lock, Settings } from 'lucide-react'
 import { cn } from '@/utils/helpers'
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +12,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     { id: 'profile', name: 'Profile Settings', href: '/settings/profile', icon: User },
     { id: 'security', name: 'Security & Password', href: '/settings/security', icon: Lock },
     { id: 'general', name: 'General / Salon', href: '/settings', icon: Settings },
-    { id: 'notifications', name: 'Notifications', href: '/settings/notifications', icon: Bell },
   ]
 
   const getActiveTab = () => {
@@ -28,7 +27,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Settings Title Header */}
-      <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="pb-4 border-b border-border dark:border-border">
         <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
           Account Settings
         </h1>
@@ -53,17 +52,17 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                       "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all w-full text-left",
                       isActive
                         ? "text-white shadow-md shadow-salon-600/10"
-                        : "hover:bg-salon-50 dark:hover:bg-salon-900/10"
+                        : "hover:bg-accent-light dark:hover:bg-salon-900/10"
                     )}
                     style={{
                       background: isActive ? 'var(--salon-600)' : 'transparent',
-                      color: isActive ? '#fff' : 'var(--text-secondary)',
+                      color: isActive ? 'var(--bg-secondary)' : 'var(--text-secondary)',
                     }}
                   >
-                    <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ color: isActive ? '#fff' : 'var(--accent)' }} />
-                    <span className="flex-1" style={{ color: isActive ? '#fff' : 'var(--text-primary)' }}>{tab.name}</span>
+                    <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} style={{ color: isActive ? 'var(--bg-secondary)' : 'var(--accent)' }} />
+                    <span className="flex-1" style={{ color: isActive ? 'var(--bg-secondary)' : 'var(--text-primary)' }}>{tab.name}</span>
                     {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-background-secondary animate-pulse" />
                     )}
                   </button>
                 )
@@ -82,16 +81,16 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                       "flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border shrink-0",
                       isActive
                         ? "text-white border-transparent shadow-sm"
-                        : "border-gray-200 dark:border-gray-800"
+                        : "border-border dark:border-border"
                     )}
                     style={{
                       background: isActive ? 'var(--salon-600)' : 'var(--bg)',
-                      color: isActive ? '#fff' : 'var(--text-primary)',
+                      color: isActive ? 'var(--bg-secondary)' : 'var(--text-primary)',
                       borderColor: isActive ? 'transparent' : 'var(--border)'
                     }}
                   >
-                    <tab.icon size={14} strokeWidth={isActive ? 2.5 : 2} style={{ color: isActive ? '#fff' : 'var(--accent)' }} />
-                    <span style={{ color: isActive ? '#fff' : 'var(--text-primary)' }}>{tab.name}</span>
+                    <tab.icon size={14} strokeWidth={isActive ? 2.5 : 2} style={{ color: isActive ? 'var(--bg-secondary)' : 'var(--accent)' }} />
+                    <span style={{ color: isActive ? 'var(--bg-secondary)' : 'var(--text-primary)' }}>{tab.name}</span>
                   </button>
                 )
               })}

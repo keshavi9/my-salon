@@ -1,15 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, LoginCredentials } from '@/types'
-
-const MOCK_USER: User = {
-  id: '1',
-  name: 'Admin',
-  email: 'admin@hairahmedabad.com',
-  phone: '+91 98765 00000',
-  role: 'admin',
-  createdAt: new Date().toISOString(),
-}
+import api from '@/lib/api'
 
 interface AuthState {
   user: User | null
@@ -34,15 +26,18 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true, error: null })
-        await new Promise(r => setTimeout(r, 600))
-        if (
-          credentials.email === 'admin@hairahmedabad.com' &&
-          credentials.password === 'Admin@123'
-        ) {
-          set({ user: MOCK_USER, token: 'mock-token', isAuthenticated: true, isLoading: false })
-        } else {
-          set({ error: 'Invalid email or password', isLoading: false })
-          throw new Error('Invalid credentials')
+
+
+
+        try {
+          const res = await api.post('/auth/login', credentials)
+          const { token, user } = res.data.data
+          if (typeof window !== 'undefined') localStorage.setItem('token', token)
+          set({ user, token, isAuthenticated: true, isLoading: false })
+        } catch (err: any) {
+          const message = err.response?.data?.message || 'Invalid email or password'
+          set({ error: message, isLoading: false })
+          throw new Error(message)
         }
       },
 

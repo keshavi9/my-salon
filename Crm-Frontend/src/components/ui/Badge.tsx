@@ -11,8 +11,8 @@ export default function Badge({ children, status, className }: BadgeProps) {
   return (
     <span
       className={cn(
-        'px-2 py-1 rounded-full text-xs font-semibold inline-block',
-        status ? getStatusColor(status) : 'bg-gray-100 text-gray-700',
+        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide',
+        status ? getStatusColor(status) : 'bg-hover text-text-secondary',
         className
       )}
     >

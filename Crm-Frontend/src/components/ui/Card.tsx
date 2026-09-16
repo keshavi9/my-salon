@@ -6,20 +6,28 @@ interface CardProps {
   className?: string
   hover?: boolean
   onClick?: () => void
+  accent?: boolean
 }
 
-export default function Card({ children, className, hover = false, onClick }: CardProps) {
+export default function Card({ children, className, hover = false, onClick, accent = false }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-2xl p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
-        'shadow-sm transition-all',
-        hover && 'hover:shadow-md cursor-pointer',
+        'rounded-2xl transition-all duration-250',
+        'bg-background-secondary border border-border',
+        hover && 'card-lift cursor-pointer',
+        accent && 'relative overflow-hidden',
         className
       )}
+      style={{ boxShadow: 'var(--shadow-card)' }}
       onClick={onClick}
     >
-      {children}
+      {accent && (
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-accent via-[var(--accent-light)] to-[var(--accent-light)]" />
+      )}
+      <div className={cn('p-5', accent && 'pt-5')}>
+        {children}
+      </div>
     </div>
   )
 }

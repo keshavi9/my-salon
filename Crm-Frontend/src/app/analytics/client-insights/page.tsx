@@ -3,10 +3,10 @@
 import { Users, UserPlus, UserCheck, TrendingUp, ArrowUpRight, Star } from 'lucide-react'
 
 const clientSegments = [
-  { segment: 'VIP Members', count: 124, revenue: 285000, avgSpend: 2298, color: '#6F5AA3' },
-  { segment: 'Regular Clients', count: 856, revenue: 412000, avgSpend: 481, color: '#6D91BF' },
-  { segment: 'New Clients', count: 68, revenue: 28000, avgSpend: 412, color: '#6F9F8F' },
-  { segment: 'Dormant (3+ months)', count: 142, revenue: 0, avgSpend: 0, color: '#D88385' },
+  { segment: 'VIP Members', count: 124, revenue: 285000, avgSpend: 2298, color: 'var(--accent-dark)' },
+  { segment: 'Regular Clients', count: 856, revenue: 412000, avgSpend: 481, color: 'var(--info)' },
+  { segment: 'New Clients', count: 68, revenue: 28000, avgSpend: 412, color: 'var(--success)' },
+  { segment: 'Dormant (3+ months)', count: 142, revenue: 0, avgSpend: 0, color: 'var(--danger)' },
 ]
 
 const topClients = [
@@ -36,17 +36,17 @@ export default function ClientInsightsPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Clients', value: '1,340', change: '+5.2%', icon: Users, color: '#6F5AA3' },
-          { label: 'New This Month', value: '68', change: '+12.8%', icon: UserPlus, color: '#6F9F8F' },
-          { label: 'Retention Rate', value: '80.1%', change: '+2.3%', icon: UserCheck, color: '#6D91BF' },
-          { label: 'Avg Lifetime Value', value: '₹8,420', change: '+15.4%', icon: TrendingUp, color: '#C7923E' },
+          { label: 'Total Clients', value: '1,340', change: '+5.2%', icon: Users, color: 'var(--accent-dark)' },
+          { label: 'New This Month', value: '68', change: '+12.8%', icon: UserPlus, color: 'var(--success)' },
+          { label: 'Retention Rate', value: '80.1%', change: '+2.3%', icon: UserCheck, color: 'var(--info)' },
+          { label: 'Avg Lifetime Value', value: '₹8,420', change: '+15.4%', icon: TrendingUp, color: 'var(--warning)' },
         ].map(({ label, value, change, icon: Icon, color }) => (
           <div key={label} className="rounded-2xl p-5" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}18` }}>
                 <Icon size={17} style={{ color }} />
               </div>
-              <span className="flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <span className="flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-success-bg text-success-text dark:bg-emerald-900/30 dark:text-success-text">
                 <ArrowUpRight size={11} />{change}
               </span>
             </div>
@@ -84,7 +84,7 @@ export default function ClientInsightsPage() {
               <div key={client.name} className="flex items-center gap-3 p-3 rounded-xl transition"
                 style={{ background: 'var(--hover)' }}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                  style={{ background: i === 0 ? '#6F5AA3' : i === 1 ? '#6D91BF' : '#6F9F8F' }}>
+                  style={{ background: i === 0 ? 'var(--accent-dark)' : i === 1 ? 'var(--info)' : 'var(--success)' }}>
                   {i + 1}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -92,7 +92,7 @@ export default function ClientInsightsPage() {
                   <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{client.visits} visits</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold" style={{ color: '#6F5AA3' }}>₹{(client.spent / 1000).toFixed(1)}k</div>
+                  <div className="text-sm font-bold" style={{ color: 'var(--accent-dark)' }}>₹{(client.spent / 1000).toFixed(1)}k</div>
                   <div className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{client.lastVisit}</div>
                 </div>
               </div>
@@ -112,10 +112,10 @@ export default function ClientInsightsPage() {
             const retH = (m.returning / total) * h
             return (
               <div key={m.month} className="flex-1 flex flex-col items-center gap-2">
-                <span className="text-xs font-semibold" style={{ color: '#6F9F8F' }}>{m.retention}%</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--success)' }}>{m.retention}%</span>
                 <div className="w-full flex flex-col rounded-t-lg overflow-hidden">
-                  <div style={{ height: `${newH}px`, background: '#6F9F8F' }} />
-                  <div style={{ height: `${retH}px`, background: '#6F5AA3' }} />
+                  <div style={{ height: `${newH}px`, background: 'var(--success)' }} />
+                  <div style={{ height: `${retH}px`, background: 'var(--accent-dark)' }} />
                 </div>
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{m.month}</span>
               </div>
@@ -123,8 +123,8 @@ export default function ClientInsightsPage() {
           })}
         </div>
         <div className="flex items-center justify-center gap-4 mt-4 text-xs">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: '#6F9F8F' }} />New</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: '#6F5AA3' }} />Returning</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: 'var(--success)' }} />New</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: 'var(--accent-dark)' }} />Returning</span>
         </div>
       </div>
     </div>

@@ -98,7 +98,7 @@ export default function PurchaseOrderPage() {
               type="button"
               onClick={addItem}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-white transition"
-              style={{ background: '#9D679F' }}
+              style={{ background: 'var(--accent)' }}
             >
               <Plus size={14} /> Add Item
             </button>
@@ -167,7 +167,7 @@ export default function PurchaseOrderPage() {
           <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Total Amount:</span>
-              <span className="text-2xl font-bold" style={{ color: '#9D679F' }}>₹{calculateTotal().toFixed(2)}</span>
+              <span className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>₹{calculateTotal().toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -177,7 +177,7 @@ export default function PurchaseOrderPage() {
           <button
             type="submit"
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold transition"
-            style={{ background: '#9D679F' }}
+            style={{ background: 'var(--accent)' }}
           >
             <ShoppingCart size={16} /> Create Order
           </button>

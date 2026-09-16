@@ -13,10 +13,10 @@ const initialNotifications = [
 ]
 
 const typeConfig: Record<string, { icon: any; bg: string; color: string }> = {
-  booking: { icon: Clock,         bg: 'bg-salon-100/25 dark:bg-salon-900/30',       color: 'text-salon-600 dark:text-salon-100' },
-  alert:   { icon: AlertTriangle, bg: 'bg-amber-50 dark:bg-amber-900/20',            color: 'text-amber-500' },
-  review:  { icon: Star,          bg: 'bg-rose-50 dark:bg-rose-900/20',            color: 'text-rose-500' },
-  payment: { icon: CheckCircle2,  bg: 'bg-emerald-50 dark:bg-emerald-900/20',        color: 'text-emerald-500' },
+  booking: { icon: Clock,         bg: 'bg-accent-light/25 dark:bg-salon-900/30',       color: 'text-accent dark:text-salon-100' },
+  alert:   { icon: AlertTriangle, bg: 'bg-warning-bg dark:bg-warning-bg',            color: 'text-warning' },
+  review:  { icon: Star,          bg: 'bg-danger-bg dark:bg-rose-900/20',            color: 'text-danger' },
+  payment: { icon: CheckCircle2,  bg: 'bg-success-bg dark:bg-success-bg',        color: 'text-success' },
 }
 
 export default function NotificationsPage() {
@@ -29,12 +29,12 @@ export default function NotificationsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bell size={20} className="text-salon-600 dark:text-salon-100" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
-          {unread > 0 && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">{unread} new</span>}
+          <Bell size={20} className="text-accent dark:text-salon-100" />
+          <h1 className="text-2xl font-bold text-text-primary dark:text-text-primary">Notifications</h1>
+          {unread > 0 && <span className="rounded-full bg-danger-bg px-2 py-0.5 text-xs font-semibold text-danger-text dark:bg-red-900/30 dark:text-danger-text">{unread} new</span>}
         </div>
         {unread > 0 && (
-          <button onClick={markAllRead} className="text-sm font-semibold text-salon-600 dark:text-salon-100 hover:underline">Mark all read</button>
+          <button onClick={markAllRead} className="text-sm font-semibold text-accent dark:text-salon-100 hover:underline">Mark all read</button>
         )}
       </div>
 
@@ -44,18 +44,18 @@ export default function NotificationsPage() {
           const Icon = cfg.icon
           return (
             <div key={n.id} onClick={() => setNotifications(p => p.map(x => x.id === n.id ? { ...x, read: true } : x))}
-              className={`flex items-start gap-4 rounded-2xl border p-4 cursor-pointer transition hover:shadow-sm ${n.read ? 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900' : 'border-salon-200 bg-salon-50/30 dark:border-salon-900/40 dark:bg-salon-900/10'}`}>
+              className={`flex items-start gap-4 rounded-2xl border p-4 cursor-pointer transition hover:shadow-sm ${n.read ? 'border-border bg-background-secondary dark:border-border dark:bg-background-secondary' : 'border-accent-light bg-accent-light/30 dark:border-salon-900/40 dark:bg-salon-900/10'}`}>
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
                 <Icon size={16} className={cfg.color} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{n.title}</p>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">{n.time}</span>
+                  <p className="text-sm font-semibold text-text-primary dark:text-text-primary">{n.title}</p>
+                  <span className="text-xs text-text-secondary dark:text-text-secondary shrink-0">{n.time}</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{n.message}</p>
+                <p className="text-xs text-text-secondary dark:text-text-secondary mt-0.5">{n.message}</p>
               </div>
-              {!n.read && <div className="w-2 h-2 rounded-full bg-salon-600 dark:bg-salon-100 shrink-0 mt-1" />}
+              {!n.read && <div className="w-2 h-2 rounded-full bg-accent dark:bg-accent-light shrink-0 mt-1" />}
             </div>
           )
         })}

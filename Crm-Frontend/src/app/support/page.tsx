@@ -7,25 +7,25 @@ import api from '@/lib/api'
 import type { SupportTicket, TicketStats } from '@/types'
 
 const statusConfig = {
-  open: { label: 'Open', color: '#D88385', bg: '#D8838518', icon: AlertCircle },
-  'in-progress': { label: 'In Progress', color: '#C7923E', bg: '#C7923E18', icon: Clock },
-  resolved: { label: 'Resolved', color: '#6F9F8F', bg: '#6F9F8F18', icon: CheckCircle },
-  closed: { label: 'Closed', color: '#9D679F', bg: '#9D679F18', icon: XCircle },
+  open: { label: 'Open', color: 'var(--danger)', bg: 'var(--danger-bg)', icon: AlertCircle },
+  'in-progress': { label: 'In Progress', color: 'var(--warning)', bg: 'var(--warning-bg)', icon: Clock },
+  resolved: { label: 'Resolved', color: 'var(--success)', bg: 'var(--success-bg)', icon: CheckCircle },
+  closed: { label: 'Closed', color: 'var(--accent)', bg: 'var(--accent-light)', icon: XCircle },
 }
 
 const priorityConfig = {
-  critical: { label: 'Critical', color: '#D88385' },
-  high: { label: 'High', color: '#C7923E' },
-  medium: { label: 'Medium', color: '#6D91BF' },
-  low: { label: 'Low', color: '#6F9F8F' },
+  critical: { label: 'Critical', color: 'var(--danger)' },
+  high: { label: 'High', color: 'var(--warning)' },
+  medium: { label: 'Medium', color: 'var(--info)' },
+  low: { label: 'Low', color: 'var(--success)' },
 }
 
 const categoryConfig = {
-  billing: { label: 'Billing', color: '#9D679F', bg: '#9D679F18' },
-  technical: { label: 'Technical', color: '#6D91BF', bg: '#6D91BF18' },
-  feature: { label: 'Feature Request', color: '#6F9F8F', bg: '#6F9F8F18' },
-  bug: { label: 'Bug Report', color: '#D88385', bg: '#D8838518' },
-  question: { label: 'Question', color: '#C7923E', bg: '#C7923E18' },
+  billing: { label: 'Billing', color: 'var(--accent)', bg: 'var(--accent-light)' },
+  technical: { label: 'Technical', color: 'var(--info)', bg: 'var(--info-bg)' },
+  feature: { label: 'Feature Request', color: 'var(--success)', bg: 'var(--success-bg)' },
+  bug: { label: 'Bug Report', color: 'var(--danger)', bg: 'var(--danger-bg)' },
+  question: { label: 'Question', color: 'var(--warning)', bg: 'var(--warning-bg)' },
 }
 
 export default function SupportPage() {
@@ -49,8 +49,12 @@ export default function SupportPage() {
       
       const response = await api.get('/support/tickets', { params })
       setTickets(response.data.data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch tickets:', error)
+      setTickets([])
+      if (error.code === 'ERR_NETWORK') {
+        console.error('Backend server is not running. Please start the server.')
+      }
     } finally {
       setLoading(false)
     }
@@ -60,48 +64,47 @@ export default function SupportPage() {
     try {
       const response = await api.get('/support/tickets/stats')
       setStats(response.data.data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch stats:', error)
+      setStats({ open: 0, inProgress: 0, resolved: 0, total: 0, closed: 0, byCategory: [], byPriority: [] })
+      if (error.code === 'ERR_NETWORK') {
+        console.error('Backend server is not running. Please start the server.')
+      }
     }
   }
 
   return (
-    <div className="min-h-full space-y-6 bg-[#FBF4F8] pb-6 text-gray-950 dark:bg-transparent dark:text-white">
+    <div className="min-h-full space-y-6 pb-6 text-text-primary dark:bg-transparent dark:text-text-primary">
       
-      {/* Header with gradient card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#6F5AA3] via-[#9D679F] to-[#C96F9B] px-6 py-6 shadow-[0_20px_50px_rgba(111,90,163,0.35)]">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-8 left-1/3 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-              <LifeBuoy size={12} />
-              Support & Help
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-sm">Support Tickets</h1>
-            <p className="mt-1 text-sm text-white/70">Manage and track your support requests</p>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 text-xs font-semibold text-accent-dark">
+            <LifeBuoy size={12} />
+            Support & Help
           </div>
-
-          <Link href="/support/new" className="inline-flex h-11 items-center justify-center gap-2 self-start rounded-xl border border-white/30 bg-white/20 px-5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 sm:self-auto">
-            <Plus size={16} />
-            New Ticket
-          </Link>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] dark:text-text-primary">Support Tickets</h1>
+          <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary">Manage and track your support requests</p>
         </div>
+
+        <Link href="/support/new" className="inline-flex h-11 items-center justify-center gap-2 self-start rounded-xl bg-gradient-to-r from-accent-dark to-accent px-5 text-sm font-semibold text-white shadow-md transition hover:opacity-90 sm:self-auto">
+          <Plus size={16} />
+          New Ticket
+        </Link>
       </div>
 
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: 'Open Tickets', value: stats.open, color: '#D88385', icon: AlertCircle },
-            { label: 'In Progress', value: stats.inProgress, color: '#C7923E', icon: Clock },
-            { label: 'Resolved', value: stats.resolved, color: '#6F9F8F', icon: CheckCircle },
-            { label: 'Total Tickets', value: stats.total, color: '#9D679F', icon: MessageSquare },
+            { label: 'Open Tickets', value: stats.open, color: 'var(--danger)', icon: AlertCircle },
+            { label: 'In Progress', value: stats.inProgress, color: 'var(--warning)', icon: Clock },
+            { label: 'Resolved', value: stats.resolved, color: 'var(--success)', icon: CheckCircle },
+            { label: 'Total Tickets', value: stats.total, color: 'var(--accent)', icon: MessageSquare },
           ].map((stat, idx) => (
-            <div key={idx} className="rounded-2xl border border-white/80 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+            <div key={idx} className="rounded-2xl border border-border bg-background-secondary p-5 shadow-sm dark:border-border dark:bg-background-secondary/[0.04]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">{stat.label}</span>
+                <span className="text-sm font-semibold text-text-secondary dark:text-text-secondary">{stat.label}</span>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: `${stat.color}18` }}>
                   <stat.icon size={18} style={{ color: stat.color }} />
                 </div>
@@ -115,19 +118,19 @@ export default function SupportPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
           <input
             type="text"
             placeholder="Search tickets by ID or subject..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-11 pr-4 text-sm transition focus:border-[#6F5AA3] focus:outline-none dark:border-white/10 dark:bg-white/[0.04]"
+            className="w-full rounded-xl border border-border bg-background-secondary py-2.5 pl-11 pr-4 text-sm transition focus:border-accent-dark focus:outline-none dark:border-border dark:bg-background-secondary/[0.04]"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold transition dark:border-white/10 dark:bg-white/[0.04]"
+          className="rounded-xl border border-border bg-background-secondary px-4 py-2.5 text-sm font-semibold transition dark:border-border dark:bg-background-secondary/[0.04]"
         >
           <option value="all">All Status</option>
           <option value="open">Open</option>
@@ -139,16 +142,16 @@ export default function SupportPage() {
 
       {/* Tickets List */}
       {loading ? (
-        <div className="rounded-2xl border border-white/80 bg-white p-12 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-          <Loader size={48} className="mx-auto mb-4 animate-spin text-[#6F5AA3]" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading tickets...</p>
+        <div className="rounded-2xl border border-border bg-background-secondary p-12 text-center shadow-sm dark:border-border dark:bg-background-secondary/[0.04]">
+          <Loader size={48} className="mx-auto mb-4 animate-spin text-accent-dark" />
+          <p className="text-sm text-text-secondary dark:text-text-secondary">Loading tickets...</p>
         </div>
       ) : (
         <div className="space-y-3">
           {tickets.length === 0 ? (
-            <div className="rounded-2xl border border-white/80 bg-white p-12 text-center shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-              <MessageSquare size={48} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">No tickets found</p>
+            <div className="rounded-2xl border border-border bg-background-secondary p-12 text-center shadow-sm dark:border-border dark:bg-background-secondary/[0.04]">
+              <MessageSquare size={48} className="mx-auto mb-4 text-text-secondary dark:text-text-secondary" />
+              <p className="text-sm text-text-secondary dark:text-text-secondary">No tickets found</p>
             </div>
           ) : (
             tickets.map(ticket => {
@@ -161,7 +164,7 @@ export default function SupportPage() {
                 <Link
                   key={ticket._id}
                   href={`/support/${ticket.ticketId}`}
-                  className="block rounded-2xl border border-white/80 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-white/10 dark:bg-white/[0.04]"
+                  className="block rounded-2xl border border-border bg-background-secondary p-5 shadow-sm transition hover:shadow-md dark:border-border dark:bg-background-secondary/[0.04]"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Ticket Info */}
@@ -172,8 +175,8 @@ export default function SupportPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">{ticket.subject}</h3>
-                            <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400">#{ticket.ticketId}</span>
+                            <h3 className="text-sm font-bold text-text-primary dark:text-text-primary truncate">{ticket.subject}</h3>
+                            <span className="shrink-0 text-xs font-semibold text-text-secondary dark:text-text-secondary">#{ticket.ticketId}</span>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: category.bg || `${category.color}18`, color: category.color }}>
@@ -188,7 +191,7 @@ export default function SupportPage() {
                     </div>
 
                     {/* Meta Info */}
-                    <div className="flex items-center gap-6 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-6 text-xs text-text-secondary dark:text-text-secondary">
                       <div className="flex items-center gap-1.5">
                         <MessageSquare size={14} />
                         <span className="font-semibold">{ticket.messages?.length || 0}</span>

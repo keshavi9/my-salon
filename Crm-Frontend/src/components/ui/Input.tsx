@@ -12,30 +12,37 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-xs font-semibold mb-1.5 tracking-wide" style={{ color: 'var(--text-secondary)' }}>
             {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
+            {props.required && <span className="text-danger ml-1">*</span>}
           </label>
         )}
         <input
           ref={ref}
           className={cn(
-            'w-full px-3 py-2 rounded-xl border transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-salon-400 focus:border-transparent',
-            'disabled:bg-gray-100 disabled:cursor-not-allowed',
-            'dark:bg-gray-800 dark:border-gray-700 dark:text-white',
+            'w-full px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200',
+            'focus:outline-none input-glow',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
             error
-              ? 'border-red-500 focus:ring-red-500'
-              : 'border-gray-300 dark:border-gray-600',
+              ? 'border-red-400 focus:border-red-400'
+              : 'border-border focus:border-[var(--accent)]',
             className
           )}
+          style={{
+            background: 'var(--bg)',
+            color: 'var(--text-primary)',
+            border: `1px solid ${error ? 'var(--danger)' : 'var(--border)'}`,
+          }}
           {...props}
         />
         {error && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
+          <p className="mt-1.5 text-xs text-danger flex items-center gap-1">
+            <span className="w-1 h-1 rounded-full bg-danger inline-block" />
+            {error}
+          </p>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+          <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{helperText}</p>
         )}
       </div>
     )
@@ -43,5 +50,4 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 )
 
 Input.displayName = 'Input'
-
 export default Input

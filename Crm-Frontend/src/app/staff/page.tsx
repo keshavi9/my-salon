@@ -1,47 +1,90 @@
 'use client'
 
 import { useState } from 'react'
-import { Users, Plus, Edit2, Trash2, X, Phone, Mail, Award, Save } from 'lucide-react'
-import { useLocationStore, BRANCHES, BRANCH_STAFF, type BranchId } from '@/store/locationStore'
+import { Users, Plus, X, Loader2, AlertCircle, Save } from 'lucide-react'
+import Link from 'next/link'
+import DataTable from '@/components/ui/DataTable'
+import api from '@/lib/api'
+import type { Staff } from '@/types'
+import toast from 'react-hot-toast'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 const SPECIALITIES = ['Hair', 'Skin', 'Nails', 'Body', 'Makeup']
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-const BLANK = { name: '', role: '', speciality: 'Hair', phone: '', email: '', workingDays: [] as string[], isActive: true }
+const BLANK = {
+  name: '', role: 'stylist' as Staff['role'], specialization: [] as string[],
+  phone: '', email: '', aadhaar: '', workingDays: [] as string[], commissionRate: 0, isActive: true,
+}
 
 export default function StaffPage() {
-  const { branchId } = useLocationStore()
-  const activeBranch = BRANCHES.find(b => b.id === branchId) ?? BRANCHES[0]
+  const queryClient = useQueryClient()
+  
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [form, setForm] = useState(BLANK)
 
-  const [allStaff, setAllStaff] = useState<Record<BranchId, typeof BRANCH_STAFF.main>>({
-    main:      [...BRANCH_STAFF.main],
-    satellite: [...BRANCH_STAFF.satellite],
-    sghighway: [...BRANCH_STAFF.sghighway],
+  const { data: staff = [], isLoading, error } = useQuery<Staff[]>({
+    queryKey: ['staff'],
+    queryFn: async () => {
+      const res = await api.get('/staff')
+      return res.data.data ?? []
+    }
   })
-  const [showForm, setShowForm]   = useState(false)
-  const [editId,   setEditId]     = useState<number | null>(null)
-  const [form,     setForm]       = useState(BLANK)
 
-  const staff    = allStaff[branchId]
-  const setStaff = (fn: (p: typeof BRANCH_STAFF.main) => typeof BRANCH_STAFF.main) =>
-    setAllStaff(prev => ({ ...prev, [branchId]: fn(prev[branchId]) }))
+  const saveMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      if (editId) {
+        return api.put(`/staff/${editId}`, payload)
+      } else {
+        return api.post('/staff', payload)
+      }
+    },
+    onSuccess: () => {
+      toast.success(editId ? 'Staff member updated' : 'Staff member added')
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+      setShowForm(false)
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to save staff member')
+    }
+  })
 
-  const openAdd = () => { setEditId(null); setForm(BLANK); setShowForm(true) }
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/staff/${id}`),
+    onSuccess: () => {
+      toast.success('Staff member deactivated')
+      queryClient.invalidateQueries({ queryKey: ['staff'] })
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to deactivate staff member')
+    }
+  })
 
-  const openEdit = (member: typeof BRANCH_STAFF.main[number]) => {
+  const openEdit = (member: Staff) => {
     setEditId(member.id)
-    setForm({ name: member.name, role: member.role, speciality: member.speciality, phone: member.phone, email: member.email, workingDays: [...member.workingDays], isActive: member.isActive })
+    setForm({
+      name: member.name,
+      role: member.role,
+      specialization: member.specialization ?? [],
+      phone: member.phone,
+      email: member.email,
+      aadhaar: member.aadhaar ?? '',
+      workingDays: (member as any).workingDays ?? [],
+      commissionRate: member.commissionRate,
+      isActive: member.isActive,
+    })
     setShowForm(true)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (editId !== null) {
-      setStaff(prev => prev.map(s => s.id === editId ? { ...s, ...form } : s))
-    } else {
-      setStaff(prev => [...prev, { id: Date.now(), ...form }])
-    }
-    setShowForm(false)
+    saveMutation.mutate(form)
+  }
+
+  const handleRemove = (id: string, name: string) => {
+    if (!confirm(`Deactivate ${name}?`)) return
+    deleteMutation.mutate(id)
   }
 
   const toggleDay = (day: string) =>
@@ -52,33 +95,47 @@ export default function StaffPage() {
         : [...prev.workingDays, day],
     }))
 
+  const toggleSpecialization = (spec: string) =>
+    setForm(prev => ({
+      ...prev,
+      specialization: prev.specialization.includes(spec)
+        ? prev.specialization.filter(s => s !== spec)
+        : [...prev.specialization, spec],
+    }))
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Users size={18} style={{ color: '#9D679F' }} />
+          <Users size={18} style={{ color: 'var(--accent)' }} />
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Staff Management</h1>
-          <span className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
-             {activeBranch.short}
-          </span>
         </div>
-        <button onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition" style={{ background: '#9D679F' }}>
+        <Link href="/staff/add"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition"
+          style={{ background: 'var(--accent)' }}>
           <Plus size={16} /> Add Staff
-        </button>
+        </Link>
       </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-danger-border bg-danger-bg px-4 py-3 text-sm text-danger-text dark:border-red-900/40 dark:bg-danger-bg dark:text-danger-text">
+          <AlertCircle size={16} />
+          {error.message || 'Failed to load staff'}
+        </div>
+      )}
 
       {/* Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowForm(false)}>
+        <div className="fixed inset-0 bg-background-secondary/50 flex items-center justify-center z-50 p-4" onClick={() => setShowForm(false)}>
           <div className="rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                {editId !== null ? 'Edit Staff Member' : 'Add Staff Member'}
+                Edit Staff Member
               </h2>
-              <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--hover)' }}>
+              <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: 'var(--hover)' }}>
                 <X size={16} />
               </button>
             </div>
@@ -87,29 +144,56 @@ export default function StaffPage() {
               <div className="grid grid-cols-2 gap-4">
                 {([
                   { label: 'Name *',  key: 'name',  type: 'text',  placeholder: 'Full name' },
-                  { label: 'Role *',  key: 'role',  type: 'text',  placeholder: 'e.g. Senior Stylist' },
-                  { label: 'Phone *', key: 'phone', type: 'tel',   placeholder: '+91 98765 43210' },
+                  { label: 'Phone',   key: 'phone', type: 'tel',   placeholder: '+91 98765 43210' },
                   { label: 'Email',   key: 'email', type: 'email', placeholder: 'email@example.com' },
+                  { label: 'Aadhaar Card No. *', key: 'aadhaar', type: 'text', placeholder: '1234 5678 9012' },
                 ] as const).map(({ label, key, type, placeholder }) => (
-                  <div key={key} className={key === 'email' ? 'col-span-2' : ''}>
+                  <div key={key} className={key === 'email' || key === 'aadhaar' ? 'col-span-2' : ''}>
                     <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>{label}</label>
                     <input type={type} required={label.includes('*')} placeholder={placeholder} value={(form as any)[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#9D679F]"
+                      className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                       style={{ border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
                   </div>
                 ))}
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Speciality</label>
-                  <select value={form.speciality} onChange={e => setForm(f => ({ ...f, speciality: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#9D679F]"
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Role</label>
+                  <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as Staff['role'] }))}
+                    className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                     style={{ border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                    {SPECIALITIES.map(s => <option key={s}>{s}</option>)}
+                    <option value="stylist">Stylist</option>
+                    <option value="assistant">Assistant</option>
+                    <option value="manager">Manager</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Commission Rate (%)</label>
+                  <input type="number" min="0" max="100" step="0.01" value={form.commissionRate}
+                    onChange={e => setForm(f => ({ ...f, commissionRate: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                    style={{ border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
+                </div>
                 <div className="flex items-center gap-2 pt-5">
-                  <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="w-4 h-4 rounded" />
+                  <input type="checkbox" id="isActive" checked={form.isActive}
+                    onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="w-4 h-4 rounded" />
                   <label htmlFor="isActive" className="text-sm" style={{ color: 'var(--text-primary)' }}>Active</label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Specialization</label>
+                <div className="flex flex-wrap gap-2">
+                  {SPECIALITIES.map(spec => (
+                    <button key={spec} type="button" onClick={() => toggleSpecialization(spec)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                      style={{
+                        background: form.specialization.includes(spec) ? 'var(--accent)' : 'var(--hover)',
+                        color: form.specialization.includes(spec) ? 'var(--bg-secondary)' : 'var(--text-secondary)',
+                        border: form.specialization.includes(spec) ? 'none' : '1px solid var(--border)',
+                      }}>
+                      {spec}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -120,9 +204,9 @@ export default function StaffPage() {
                     <button key={day} type="button" onClick={() => toggleDay(day)}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                       style={{
-                        background: form.workingDays.includes(day) ? '#9D679F' : 'var(--hover)',
-                        color:      form.workingDays.includes(day) ? '#fff' : 'var(--text-secondary)',
-                        border:     form.workingDays.includes(day) ? 'none' : '1px solid var(--border)',
+                        background: form.workingDays.includes(day) ? 'var(--accent)' : 'var(--hover)',
+                        color: form.workingDays.includes(day) ? 'var(--bg-secondary)' : 'var(--text-secondary)',
+                        border: form.workingDays.includes(day) ? 'none' : '1px solid var(--border)',
                       }}>
                       {day.slice(0, 3)}
                     </button>
@@ -136,9 +220,11 @@ export default function StaffPage() {
                   style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                   Cancel
                 </button>
-                <button type="submit"
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold" style={{ background: '#9D679F' }}>
-                  <Save size={14} /> {editId !== null ? 'Update Staff' : 'Add Staff'}
+                <button type="submit" disabled={saveMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-60"
+                  style={{ background: 'var(--accent)' }}>
+                  {saveMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Update Staff
                 </button>
               </div>
             </form>
@@ -147,52 +233,41 @@ export default function StaffPage() {
       )}
 
       {/* Staff Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {staff.map(member => (
-          <div key={member.id} className="rounded-2xl p-5" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold" style={{ background: 'linear-gradient(135deg,#9D679F,#6F5AA3)' }}>
-                  {member.name.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{member.name}</h3>
-                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{member.role}</p>
-                </div>
-              </div>
-              <span className={`text-xs px-2 py-1 rounded-full ${member.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-700'}`}>
-                {member.isActive ? 'Active' : 'Inactive'}
-              </span>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}><Award size={12} />{member.speciality}</div>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}><Phone size={12} />{member.phone}</div>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}><Mail size={12} />{member.email}</div>
-            </div>
-
-            <div className="flex flex-wrap gap-1 mb-4">
-              {member.workingDays.map(day => (
-                <span key={day} className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#9D679F18', color: '#9D679F' }}>
-                  {day.slice(0, 3)}
-                </span>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <button onClick={() => openEdit(member)}
-                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold transition"
-                style={{ background: 'var(--hover)', color: 'var(--text-primary)' }}>
-                <Edit2 size={12} /> Edit
-              </button>
-              <button onClick={() => { if (confirm(`Remove ${member.name}?`)) setStaff(prev => prev.filter(s => s.id !== member.id)) }}
-                className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/20">
-                <Trash2 size={12} /> Remove
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20 gap-3">
+          <Loader2 className="h-7 w-7 animate-spin text-accent" />
+          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading staff…</span>
+        </div>
+      ) : (
+        <DataTable
+          rows={staff.map(member => ({
+            id: member.id,
+            name: member.name,
+            phone: member.phone || '—',
+            email: member.email || '—',
+            service: member.role,
+            stylist: member.specialization?.join(', ') || '—',
+            date: (member as any).workingDays?.join(', ') || '—',
+            amount: member.commissionRate,
+            amountLabel: `${member.commissionRate}%`,
+            status: member.isActive ? 'active' : 'inactive',
+            rawStaff: member
+          }))}
+          headers={[
+            'Name',
+            'Contact',
+            'Role',
+            'Specialization',
+            'Working Days',
+            'Commission',
+            'Status',
+            'Actions'
+          ]}
+          emptyMessage="No staff members found"
+          onCustomEdit={(row) => openEdit(row.rawStaff as Staff)}
+          onDelete={(row) => handleRemove(row.id, row.name)}
+        />
+      )}
     </div>
   )
 }

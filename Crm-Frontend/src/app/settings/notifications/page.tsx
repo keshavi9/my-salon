@@ -74,7 +74,7 @@ export default function NotificationSettingsPage() {
                 <button onClick={() => toggle('whatsapp', key)}
                   className="w-12 h-6 rounded-full transition-colors relative"
                   style={{ background: settings.whatsapp[key as keyof typeof settings.whatsapp] ? '#6F9F8F' : 'var(--border)' }}>
-                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-background-secondary transition-all"
                     style={{ left: settings.whatsapp[key as keyof typeof settings.whatsapp] ? '26px' : '2px' }} />
                 </button>
               </div>
@@ -108,7 +108,7 @@ export default function NotificationSettingsPage() {
                 <button onClick={() => toggle('email', key)}
                   className="w-12 h-6 rounded-full transition-colors relative"
                   style={{ background: settings.email[key as keyof typeof settings.email] ? '#6D91BF' : 'var(--border)' }}>
-                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-background-secondary transition-all"
                     style={{ left: settings.email[key as keyof typeof settings.email] ? '26px' : '2px' }} />
                 </button>
               </div>
@@ -141,7 +141,7 @@ export default function NotificationSettingsPage() {
                 <button onClick={() => toggle('push', key)}
                   className="w-12 h-6 rounded-full transition-colors relative"
                   style={{ background: settings.push[key as keyof typeof settings.push] ? '#6F5AA3' : 'var(--border)' }}>
-                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-background-secondary transition-all"
                     style={{ left: settings.push[key as keyof typeof settings.push] ? '26px' : '2px' }} />
                 </button>
               </div>
