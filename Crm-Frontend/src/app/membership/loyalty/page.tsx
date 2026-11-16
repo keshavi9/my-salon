@@ -32,7 +32,7 @@ export default function LoyaltyPage() {
 
   const adjustPoints = async (customerId: string, points: number, action: 'add' | 'redeem') => {
     try {
-      await api.post(`/customers/${customerId}/loyalty`, { points, action })
+      await api.patch(`/customers/${customerId}/loyalty`, { points, action })
       fetchCustomers()
     } catch (error) {
       alert('Failed to update loyalty points')

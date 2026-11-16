@@ -13,11 +13,11 @@ import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { theme, toggleTheme } = useThemeStore()
-  const { user, logout }       = useAuthStore()
+  const { user, logout } = useAuthStore()
   const { branchId, setBranch } = useLocationStore()
   const router = useRouter()
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showLocMenu,  setShowLocMenu]  = useState(false)
+  const [showLocMenu, setShowLocMenu] = useState(false)
 
   const activeBranch = BRANCHES.find(b => b.id === branchId) ?? BRANCHES[0]
   const initials = (user?.name ?? 'A').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()

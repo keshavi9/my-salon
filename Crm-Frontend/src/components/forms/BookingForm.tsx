@@ -315,18 +315,40 @@ export default function BookingForm({ mode }: Props) {
     }
   }
 
-  /* Pay Later — book without payment (staff optional) */
-  const handlePayLater = () => {
+  /* Pay Later — post to API + local store; payment status = unpaid/pending */
+  const handlePayLater = async () => {
     if (loading) return
     const err = validatePayLater()
     if (err) { toast.error(err); return }
-    const id = generateId()
-    setBookingId(id)
     if (!customer) return
     setLoading(true)
     try {
+      // ── Step 1: post to backend so it appears in the Billing List table ──
+      const res = await api.post('/bookings', {
+        customerId: customer.id,
+        staffId: cart.find(i => i.staff.length > 0)?.staff[0]?.id ?? null,
+        services: cart.map(i => ({
+          serviceId: i.service.id, serviceName: i.service.name,
+          price: i.service.price, duration: i.service.duration, quantity: i.quantity,
+          staffIds: i.staff.map(st => st.id),
+        })),
+        date: mode === 'appointment' ? date : new Date().toISOString().split('T')[0],
+        time: mode === 'appointment' ? time : new Date().toTimeString().split(' ')[0].substring(0, 5),
+        totalAmount: total,
+        paidAmount: 0,
+        paymentStatus: 'unpaid',   // ← pending payment
+        paymentMethod: 'cash',     // default; to be collected later
+        status: 'confirmed',       // ← not completed yet — payment still due
+        notes: discountApplied
+          ? `Pay Later | Discount: ${discountCode} (${discountPct}%)`
+          : 'Pay Later — payment pending',
+      })
+
+      // ── Step 2: also save to local Zustand store for adv-booking-list ──
+      const savedId = res.data.data?.id ?? generateId()
+      setBookingId(savedId)
       addBooking({
-        id,
+        id: savedId,
         type: mode,
         customerName: customer.name,
         customerPhone: customer.phone,
@@ -341,13 +363,15 @@ export default function BookingForm({ mode }: Props) {
         discountCode: discountApplied ? discountCode.toUpperCase() : undefined,
         discountAmount, taxAmount, finalAmount: total, totalDuration,
         paymentMethod: 'pay-later',
-        paymentStatus: 'unpaid',
-        status: 'completed',
+        paymentStatus: 'unpaid',   // ← shown as Pending in table
+        status: 'checked-in',      // ← not completed; will be updated after payment
         ...(mode === 'appointment' && { date, time }),
         branchId,
         createdAt: new Date().toISOString(),
       })
       setStep('done')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to save booking')
     } finally {
       setLoading(false)
     }
@@ -841,7 +865,9 @@ export default function BookingForm({ mode }: Props) {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{item.service.name}</p>
-                            <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{item.staff.length > 0 ? item.staff.map(s => `${s.name} (${s.role})`).join(', ') : 'No staff assigned'}</p>
+                            {item.itemType === 'service' && (
+                              <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{item.staff.length > 0 ? item.staff.map(s => `${s.name} (${s.role})`).join(', ') : 'No staff assigned'}</p>
+                            )}
                           </div>
                           <button onClick={() => removeItem(item.service.id)} className="rounded-lg p-1 text-danger-text hover:bg-danger-bg shrink-0">
                             <Trash2 size={14} />

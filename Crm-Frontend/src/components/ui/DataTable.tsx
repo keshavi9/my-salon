@@ -50,6 +50,7 @@ interface DataTableProps {
   onDelete?: (row: TableRow) => void
   /** Extra fields to show in View/Edit modals beyond the standard columns */
   extraFields?: { key: string; label: string; type?: 'text' | 'select'; options?: string[] }[]
+  statusOptions?: string[]
   emptyMessage?: string
 }
 
@@ -63,7 +64,7 @@ function statusClass(status: string) {
     return 'bg-info-bg text-info-text border border-info-border dark:bg-info-bg dark:text-info-text dark:border-info-border'
   if (['in_service', 'in-progress', 'in service'].includes(s))
     return 'bg-accent-light text-accent border border-border dark:bg-violet-900/20 dark:text-violet-300 dark:border-violet-800'
-  if (['pending', 'partial', 'partially_paid', 'break'].includes(s))
+  if (['pending', 'partial', 'partially_paid', 'break', 'unpaid', 'pay-later', 'pay later'].includes(s))
     return 'bg-warning-bg text-warning-text border border-warning-border dark:bg-warning-bg dark:text-warning-text dark:border-warning-border'
   if (['cancelled', 'failed', 'error', 'refunded'].includes(s))
     return 'bg-danger-bg text-danger border border-danger-border dark:bg-danger-bg dark:text-danger-text dark:border-danger-border'
@@ -144,7 +145,8 @@ function ActionMenu({ row, onView, onEdit, onDelete }: ActionMenuProps) {
 
 // ─── View Modal ───────────────────────────────────────────────────────────────
 
-function ViewModal({ row, extraFields, onClose }: { row: TableRow; extraFields?: DataTableProps['extraFields']; onClose: () => void }) {
+function ViewModal({ row, extraFields,
+    statusOptions, onClose }: { row: TableRow; extraFields?: DataTableProps['extraFields']; onClose: () => void }) {
   const standard = [
     { label: 'Name', value: row.name },
     { label: 'Phone', value: row.phone },
@@ -186,9 +188,10 @@ function ViewModal({ row, extraFields, onClose }: { row: TableRow; extraFields?:
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
-function EditModal({ row, extraFields, onClose, onSave }: {
+function EditModal({ row, extraFields, statusOptions, onClose, onSave }: {
   row: TableRow
   extraFields?: DataTableProps['extraFields']
+  statusOptions?: string[]
   onClose: () => void
   onSave: (updated: TableRow) => void
 }) {
@@ -197,7 +200,20 @@ function EditModal({ row, extraFields, onClose, onSave }: {
   const set = (key: string, value: string | number) =>
     setForm(prev => ({ ...prev, [key]: value }))
 
-  const fields: { key: keyof TableRow; label: string; type?: string }[] = [
+  // Default status options: pending and completed
+  const baseStatusOptions = statusOptions && statusOptions.length > 0
+    ? statusOptions
+    : ['pending', 'completed']
+
+  const currentStatus = String(form.status ?? '').trim()
+  const currentStatusLower = currentStatus.toLowerCase()
+
+  // Ensure current status is included in options if it is not already in baseStatusOptions
+  const resolvedStatusOptions = baseStatusOptions.some(opt => opt.toLowerCase() === currentStatusLower)
+    ? baseStatusOptions
+    : (currentStatus ? [currentStatus, ...baseStatusOptions] : baseStatusOptions)
+
+  const fields: { key: keyof TableRow; label: string; type?: string; options?: string[] }[] = [
     { key: 'name', label: 'Name' },
     { key: 'phone', label: 'Phone', type: 'tel' },
     { key: 'email', label: 'Email', type: 'email' },
@@ -206,7 +222,7 @@ function EditModal({ row, extraFields, onClose, onSave }: {
     { key: 'date', label: 'Date', type: 'date' },
     { key: 'time', label: 'Time', type: 'time' },
     { key: 'amount', label: 'Amount', type: 'number' },
-    { key: 'status', label: 'Status' },
+    { key: 'status', label: 'Status', type: 'select', options: resolvedStatusOptions },
     { key: 'paymentMethod', label: 'Payment Method' },
   ]
 
@@ -218,13 +234,31 @@ function EditModal({ row, extraFields, onClose, onSave }: {
             <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-secondary)' }}>
               {f.label}
             </label>
-            <input
-              type={f.type || 'text'}
-              value={String(form[f.key] ?? '')}
-              onChange={e => set(f.key as string, f.type === 'number' ? Number(e.target.value) : e.target.value)}
-              className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-[var(--accent-light)]"
-              style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }}
-            />
+            {f.type === 'select' && f.options ? (
+              <div className="relative">
+                <select
+                  value={String(form[f.key] ?? '')}
+                  onChange={e => set(f.key as string, e.target.value)}
+                  className="w-full rounded-xl px-3 py-2 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-[var(--accent-light)] cursor-pointer capitalize"
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }}
+                >
+                  {f.options.map(o => (
+                    <option key={o} value={o}>
+                      {o.charAt(0).toUpperCase() + o.slice(1).replace(/_/g, ' ')}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-secondary)' }} />
+              </div>
+            ) : (
+              <input
+                type={f.type || 'text'}
+                value={String(form[f.key] ?? '')}
+                onChange={e => set(f.key as string, f.type === 'number' ? Number(e.target.value) : e.target.value)}
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent dark:focus:ring-[var(--accent-light)]"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)' }}
+              />
+            )}
           </div>
         ))}
         {extraFields?.map(f => (
@@ -351,6 +385,7 @@ export default function DataTable(props: DataTableProps) {
     onEdit,
     onDelete,
     extraFields,
+    statusOptions,
     emptyMessage = 'No records found',
     headers,
   } = props
@@ -740,12 +775,14 @@ export default function DataTable(props: DataTableProps) {
 
       {/* Modals */}
       {modal?.type === 'view' && (
-        <ViewModal row={modal.row} extraFields={extraFields} onClose={() => setModal(null)} />
+        <ViewModal row={modal.row} extraFields={extraFields}
+          statusOptions={statusOptions} onClose={() => setModal(null)} />
       )}
       {modal?.type === 'edit' && (
         <EditModal
           row={modal.row}
           extraFields={extraFields}
+          statusOptions={statusOptions}
           onClose={() => setModal(null)}
           onSave={updated => handleEdit(modal.row, updated)}
         />

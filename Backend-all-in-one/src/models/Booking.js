@@ -20,13 +20,19 @@ const Booking = sequelize.define('Booking', {
     type: DataTypes.ENUM('Booked', 'Checked_In', 'In_Service', 'Completed'),
     defaultValue: 'Booked',
   },
-  paymentModel: { type: DataTypes.ENUM('Pre-Paid', 'Post-Paid'), defaultValue: 'Post-Paid' },
+  // paymentMode: when payment is collected — Pre-Paid (online) or Post-Paid (at counter)
+  // Renamed from 'paymentModel' which was misleading (implied a Sequelize model reference).
+  paymentMode: { type: DataTypes.ENUM('Pre-Paid', 'Post-Paid'), defaultValue: 'Post-Paid' },
   totalAmount: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
   paidAmount: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
   paymentStatus: { type: DataTypes.ENUM('unpaid', 'partial', 'paid'), defaultValue: 'unpaid' },
   paymentMethod: { type: DataTypes.ENUM('cash', 'card', 'upi', 'wallet') },
   notes: { type: DataTypes.TEXT },
   razorpayOrderId: { type: DataTypes.STRING },
+  // Draft TTL: set to now+15min when a Razorpay order is created.
+  // Cleared to null by webhookController on payment.captured.
+  // A scheduled job should cancel bookings where expiresAt < NOW() and status = 'pending'.
+  expiresAt: { type: DataTypes.DATE, allowNull: true },
 }, { tableName: 'bookings' })
 
 module.exports = Booking

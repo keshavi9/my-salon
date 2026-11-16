@@ -1,19 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Calendar, ChevronLeft, ChevronRight, Clock, User, Scissors, Phone, MapPin, Plus, Filter, Save, X } from 'lucide-react'
 import { useBookingStore, type BookingEntry } from '@/store/bookingStore'
-import { STAFF as BOOKING_STAFF, SERVICES } from '@/lib/bookingData'
+import api from '@/lib/api'
 
 const STAFF_COLORS = ['var(--accent)', 'var(--info)', 'var(--success)', 'var(--warning)', 'var(--accent)', '#ec4899']
 
-const STAFF = BOOKING_STAFF.map((s, i) => ({
-  id: s.id,
-  name: s.name,
-  color: STAFF_COLORS[i % STAFF_COLORS.length],
-  role: s.speciality
-}))
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 9) // 9 AM to 8 PM
 const SLOT_HEIGHT = 96 // Height per hour slot
@@ -52,6 +46,31 @@ export default function CalendarPage() {
   const [editStatus, setEditStatus] = useState<BookingEntry['status']>('checked-in')
   const [editStaffId, setEditStaffId] = useState('')
   const [editServiceId, setEditServiceId] = useState('')
+
+  const [STAFF, setSTAFF] = useState<{ id: string; name: string; color: string; role: string }[]>([])
+  const [SERVICES, setSERVICES] = useState<{ id: string; name: string; duration: number; price: number }[]>([])
+
+  useEffect(() => {
+    api.get('/staff?isActive=true').then(res => {
+      const data = res.data?.data || res.data || []
+      setSTAFF(data.map((s: any, i: number) => ({
+        id: s.id,
+        name: s.name,
+        color: STAFF_COLORS[i % STAFF_COLORS.length],
+        role: s.speciality || s.role || ''
+      })))
+    }).catch(() => {})
+
+    api.get('/services?isActive=true').then(res => {
+      const data = res.data?.data || res.data || []
+      setSERVICES(data.map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        price: Number(s.price || 0),
+        duration: s.duration || 30
+      })))
+    }).catch(() => {})
+  }, [])
 
   const yyyy = selectedDate.getFullYear()
   const mm = String(selectedDate.getMonth() + 1).padStart(2, '0')
@@ -165,7 +184,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="overflow-hidden rounded-2xl border border-border/60 bg-background-secondary/70 backdrop-blur-xl shadow-lg dark:border-border/60 dark:bg-background-secondary/70">
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-background-secondary/70 backdrop-blur-xl shadow-lg dark:border-transparent dark:bg-background-secondary/70 dark:shadow-xl dark:shadow-zinc-700/90">
         <div className="grid grid-cols-5 divide-x divide-border dark:divide-zinc-800/60">
           {/* Time Column */}
           <div className="col-span-1 bg-background/50 dark:bg-background/20">

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type PaymentMethod = 'cash' | 'card' | 'upi' | 'pay-later'
-export type BookingStatus = 'checked-in' | 'in-service' | 'completed'
+export type BookingStatus = 'pending' | 'checked-in' | 'in-service' | 'completed' | 'cancelled'
 export type BookingType = 'walkin' | 'appointment'
 
 export interface BookingEntry {
@@ -12,7 +12,7 @@ export interface BookingEntry {
   customerPhone: string
   customerEmail?: string
   customerGender?: 'male' | 'female' | 'other'
-  services: { id: string; name: string; price: number; duration: number; quantity: number; staffId: string; staffName: string }[]
+  services: { id: string; name: string; price: number; duration: number; quantity: number; staffId?: string; staffName?: string; staffIds?: string[] }[]
   totalAmount: number
   discountCode?: string
   discountAmount: number

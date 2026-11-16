@@ -9,6 +9,8 @@ const User = sequelize.define('User', {
   password: { type: DataTypes.STRING, allowNull: false },
   role: { type: DataTypes.ENUM('admin', 'manager', 'receptionist', 'stylist'), defaultValue: 'stylist' },
   isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+  resetPasswordToken: { type: DataTypes.STRING },
+  resetPasswordExpires: { type: DataTypes.DATE },
 }, { tableName: 'users' })
 
 User.beforeSave(async (user) => {

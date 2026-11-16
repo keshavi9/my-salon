@@ -18,9 +18,9 @@ const navItems: NavItem[] = [
   {
     name: 'Bookings', icon: Calendar, prefix: '/booking',
     items: [
-      { name: 'Billing', href: '/booking/walkin', icon: UserPlus },
+      { name: 'Invoices', href: '/booking/walkin', icon: UserPlus },
       { name: 'Calendar', href: '/booking/calendar', icon: CalendarDays },
-      { name: 'Billing List', href: '/booking/list', icon: List },
+      { name: 'Billing History', href: '/booking/list', icon: List },
       { name: 'Booking List', href: '/booking/adv-booking-list', icon: LayoutGrid },
     ],
   },
@@ -149,30 +149,30 @@ export default function Sidebar() {
                 onClick={() => toggle(nav.name)}
                 className={cn(
                   'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150',
-                  isActive
+                  (isActive || isOpen)
                     ? 'text-[var(--sidebar-active-text)]'
                     : 'text-[var(--sidebar-text)] hover:text-[var(--sidebar-active-text)]'
                 )}
                 style={{
-                  background: isActive ? 'var(--sidebar-active-bg)' : 'transparent',
+                  background: 'transparent',
                 }}
                 onMouseEnter={e => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover)'
+                  (e.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover)'
                 }}
                 onMouseLeave={e => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                  (e.currentTarget as HTMLElement).style.background = 'transparent'
                 }}
               >
                 {/* Icon container */}
                 <span
                   className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all duration-150"
                   style={{
-                    background: isActive ? 'var(--accent)' : 'transparent',
+                    background: 'transparent',
                   }}
                 >
                   <nav.icon
                     size={14}
-                    style={{ color: isActive ? 'var(--bg-secondary)' : 'var(--sidebar-text)' }}
+                    style={{ color: (isActive || isOpen) ? 'var(--sidebar-active-text)' : 'var(--sidebar-text)' }}
                   />
                 </span>
 

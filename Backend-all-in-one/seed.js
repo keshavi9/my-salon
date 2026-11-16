@@ -18,7 +18,7 @@ async function seed() {
     role: 'admin',
   })
 
-  console.log('✅ Admin user created: admin@hairahmedabad.com / Admin@123')
+  console.log('✅ Admin user created: admin@hairahmedabad.com')
   process.exit(0)
 }
 

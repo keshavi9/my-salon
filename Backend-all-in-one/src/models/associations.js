@@ -8,6 +8,8 @@ Booking.belongsTo(Staff, { foreignKey: 'staffId' })
 Customer.hasMany(Booking, { foreignKey: 'customerId' })
 Staff.hasMany(Booking, { foreignKey: 'staffId' })
 
-Payment.belongsTo(Customer, { foreignKey: 'customerId' })
+// Payment ↔ Booking (bidirectional — both sides required for eager-loading)
+Booking.hasMany(Payment, { foreignKey: 'bookingId' })   // ← was missing
 Payment.belongsTo(Booking, { foreignKey: 'bookingId' })
+Payment.belongsTo(Customer, { foreignKey: 'customerId' })
 Customer.hasMany(Payment, { foreignKey: 'customerId' })

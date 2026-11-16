@@ -1,4 +1,5 @@
 const { Op } = require('sequelize')
+const { sequelize } = require('../config/db')   // moved from inside getTicketStats
 const SupportTicket = require('../models/SupportTicket')
 const nodemailer = require('nodemailer')
 const asyncHandler = require('express-async-handler')
@@ -13,8 +14,21 @@ const transporter = nodemailer.createTransport({
   },
 })
 
+// ---------------------------------------------------------------------------
+// Escape HTML special characters before embedding user input in email HTML.
+// Without this, ticket.description could inject arbitrary HTML/scripts into
+// the dev team's email client.
+// ---------------------------------------------------------------------------
+const escapeHtml = (str) =>
+  String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
 const sendTicketEmail = async (ticket) => {
-  if (!process.env.DEV_TEAM_EMAIL) return; // avoid crashing if not configured
+  if (!process.env.DEV_TEAM_EMAIL) return
   await transporter.sendMail({
     from: ticket.adminEmail,
     to: process.env.DEV_TEAM_EMAIL,
@@ -25,13 +39,13 @@ const sendTicketEmail = async (ticket) => {
           <h2 style="color: white; margin: 0;">New Support Ticket</h2>
         </div>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px;">
-          <p><strong>Ticket ID:</strong> ${ticket.ticketId}</p>
-          <p><strong>Subject:</strong> ${ticket.subject}</p>
-          <p><strong>Category:</strong> ${ticket.category}</p>
-          <p><strong>Priority:</strong> ${ticket.priority}</p>
-          <p><strong>From:</strong> ${ticket.adminEmail}</p>
+          <p><strong>Ticket ID:</strong> ${escapeHtml(ticket.ticketId)}</p>
+          <p><strong>Subject:</strong> ${escapeHtml(ticket.subject)}</p>
+          <p><strong>Category:</strong> ${escapeHtml(ticket.category)}</p>
+          <p><strong>Priority:</strong> ${escapeHtml(ticket.priority)}</p>
+          <p><strong>From:</strong> ${escapeHtml(ticket.adminEmail)}</p>
           <p><strong>Description:</strong></p>
-          <p style="white-space: pre-wrap;">${ticket.description}</p>
+          <p style="white-space: pre-wrap;">${escapeHtml(ticket.description)}</p>
         </div>
       </div>
     `,
@@ -53,10 +67,19 @@ const messageSchema = z.object({
   isAdmin: z.boolean().optional(),
 })
 
+// Valid ticket statuses — mirrors the SupportTicket model ENUM
+const TICKET_STATUSES = ['open', 'in-progress', 'resolved', 'closed']
+
+const ticketStatusSchema = z.object({
+  status: z.enum(TICKET_STATUSES, {
+    errorMap: () => ({ message: `status must be one of: ${TICKET_STATUSES.join(', ')}` }),
+  }),
+})
+
 exports.createTicket = asyncHandler(async (req, res) => {
   const validated = ticketSchema.parse(req.body)
   const ticketId = `TKT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${uuidv4().slice(0, 8).toUpperCase()}`
-  
+
   const ticket = await SupportTicket.create({
     ...validated,
     ticketId,
@@ -71,7 +94,7 @@ exports.createTicket = asyncHandler(async (req, res) => {
   } catch (emailErr) {
     console.error('Email send failed:', emailErr.message)
   }
-  
+
   res.status(201).json({ success: true, message: 'Support ticket created successfully', data: ticket })
 })
 
@@ -89,7 +112,7 @@ exports.getAllTickets = asyncHandler(async (req, res) => {
   }
 
   const pageNum = parseInt(page) || 1
-  const limitNum = parseInt(limit) || 20
+  const limitNum = Math.min(parseInt(limit) || 20, 100)
   const offset = (pageNum - 1) * limitNum
 
   const { count, rows } = await SupportTicket.findAndCountAll({
@@ -116,11 +139,11 @@ exports.updateTicketStatus = asyncHandler(async (req, res) => {
     res.status(404)
     throw new Error('Ticket not found')
   }
-  const status = req.body.status
-  if (!status) {
-    res.status(400)
-    throw new Error('Status is required')
-  }
+
+  // Validate status via Zod enum — raw req.body.status would cause a Postgres
+  // ENUM constraint 500 on invalid values instead of a clean 400.
+  const { status } = ticketStatusSchema.parse(req.body)
+
   const updates = { status }
   if (status === 'resolved' || status === 'closed') updates.resolvedAt = new Date()
   await ticket.update(updates)
@@ -148,16 +171,24 @@ exports.getTicketStats = asyncHandler(async (req, res) => {
     SupportTicket.count({ where: { status: 'closed' } }),
   ])
 
-  const { sequelize } = require('../config/db')
-  const [byCategory] = await sequelize.query(
-    `SELECT category AS "_id", COUNT(*) AS count FROM support_tickets GROUP BY category`
-  )
-  const [byPriority] = await sequelize.query(
-    `SELECT priority AS "_id", COUNT(*) AS count FROM support_tickets GROUP BY priority`
-  )
+  const byCategoryRaw = await SupportTicket.findAll({
+    attributes: [['category', '_id'], [sequelize.fn('COUNT', '*'), 'count']],
+    group: ['category'],
+    raw: true,
+  })
+  const byPriorityRaw = await SupportTicket.findAll({
+    attributes: [['priority', '_id'], [sequelize.fn('COUNT', '*'), 'count']],
+    group: ['priority'],
+    raw: true,
+  })
+
+  // Ensure 'count' is parsed as an integer since raw pg responses often return strings for count
+  const byCategory = byCategoryRaw.map(r => ({ _id: r._id, count: parseInt(r.count, 10) }))
+  const byPriority = byPriorityRaw.map(r => ({ _id: r._id, count: parseInt(r.count, 10) }))
 
   res.json({
     success: true,
     data: { total, open, inProgress, resolved, closed, byCategory, byPriority },
   })
 })
+

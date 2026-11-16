@@ -9,14 +9,13 @@ const Service = sequelize.define('Service', {
   price: { type: DataTypes.INTEGER, allowNull: false },
   duration: { type: DataTypes.INTEGER, allowNull: false },
   isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
-}, { tableName: 'services' })
+}, { 
+  tableName: 'services',
+  indexes: [
+    { fields: ['category'] },
+    { fields: ['isActive'] }
+  ]
+})
 
-// Virtual getter/setter: price in rupees
-Service.prototype.getPriceInRupees = function () {
-  return this.price / 100
-}
-Service.prototype.setPriceFromRupees = function (rupees) {
-  this.price = Math.round(rupees * 100)
-}
 
 module.exports = Service
